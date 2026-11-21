@@ -21,10 +21,13 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/OneMoreMac"
 cp Support/OneMoreMac/Info.plist "$APP/Contents/Info.plist"
 # The Icon Composer icon (from scripts/make-icon.swift) compiles to Assets.car, which macOS 26 and
-# later draw from, and AppIcon.icns for earlier versions. actool comes with Xcode.
-xcrun actool Support/OneMoreMac/AppIcon.icon --compile "$APP/Contents/Resources" --platform macosx \
+# later draw from, and AppIcon.icns for earlier versions. actool comes with Xcode, and reads .icon
+# documents from Xcode 26 on; without them the app keeps the generic icon.
+if ! xcrun actool Support/OneMoreMac/AppIcon.icon --compile "$APP/Contents/Resources" --platform macosx \
     --minimum-deployment-target 14.0 --app-icon AppIcon \
-    --output-partial-info-plist "build/AppIcon-partial.plist" >/dev/null
+    --output-partial-info-plist "build/AppIcon-partial.plist" >/dev/null 2>&1; then
+    echo "warning: could not compile the app icon (needs Xcode 26 or later); using the generic icon" >&2
+fi
 codesign --force --sign "$SIGN_IDENTITY" "$APP"
 
 echo "Built $APP"

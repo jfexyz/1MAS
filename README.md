@@ -24,7 +24,66 @@ Requires macOS 14 (Sonoma) or later; so far tested only on macOS 27.
 | `scripts/make-icon.swift`  | Writes the app icon, `AppIcon.icon`, for Icon Composer. Its header says how to run it.                                                               |
 | `Tests/OneMoreKitTests`    | Unit tests, pinned to real packets from the public sources and the hardware.                                                                         |
 
-## Building and running
+## Installing
+
+There is no download yet. An app from the internet has to be signed and notarized with a paid Apple
+Developer account, or macOS refuses to open it. Building it yourself takes a few minutes, and macOS
+opens an app built on the same Mac without complaint.
+
+**You need:**
+
+- A Mac running macOS 14 (Sonoma) or later.
+- [Xcode](https://apps.apple.com/app/xcode/id497799835), free from the Mac App Store. Open it once
+  after installing, so it can finish setting up. Xcode 26 or later, which needs macOS 15.6, also
+  builds the app icon; with an older Xcode the app builds with the generic app icon.
+- The headphones paired with the Mac in System Settings → Bluetooth.
+
+**Build and install:**
+
+```sh
+git clone https://github.com/jfexyz/1more-mac.git
+cd 1more-mac
+scripts/build-app.sh
+mv build/1more-mac.app /Applications/
+open /Applications/1more-mac.app
+```
+
+If the build warns that it could not compile the app icon although Xcode 26 or later is installed,
+or fails because no developer tools were found, the terminal is using the Command Line Tools instead
+of Xcode. Point it at Xcode, then build again:
+
+```sh
+sudo xcode-select --switch /Applications/Xcode.app
+```
+
+**First launch:** macOS asks for Bluetooth permission; allow it. The app then appears in the menu
+bar, not the Dock. To start it whenever you log in, turn on Launch at Login in its menu.
+
+**Updating:** quit the app from its menu, then:
+
+```sh
+cd 1more-mac
+git pull
+scripts/build-app.sh
+rm -rf /Applications/1more-mac.app && mv build/1more-mac.app /Applications/
+open /Applications/1more-mac.app
+```
+
+macOS may ask for Bluetooth permission again after an update, since each build is signed afresh (see
+`SIGN_IDENTITY` below).
+
+## Using it
+
+The menu bar icon is the headphones with a letter for the current mode: **A** for active noise
+cancellation, **T** for transparency, **O** for off. It is dimmed when no headphones are connected.
+The menu shows the battery, switches noise control and the EQ preset, turns dual device connection
+on or off, and shows the model and firmware.
+
+**Only one program can hold the headphones' control channel.** While the app is connected, the
+vendor's phone app and the `onemore` CLI cannot reach the headphones; quit the app to use them. If
+the app shows "Another app might have control", close the phone app.
+
+## Development
 
 ```sh
 swift build
@@ -33,16 +92,9 @@ scripts/build-app.sh && open build/1more-mac.app
 $(swift build --show-bin-path)/onemore --help
 ```
 
-`scripts/build-app.sh` needs Xcode, not only the Command Line Tools, for `actool` to compile the app
-icon. The app is a menu bar item only (no Dock icon). The icon is the headphones with a letter for
-the current mode: **A** for active noise cancellation, **T** for transparency, **O** for off. It is
-dimmed when no headphones are connected. Its menu has a Launch at Login toggle, which registers the
-app where it is, so move it to `/Applications` first if you want that. On first launch macOS asks
-for Bluetooth permission. The app is ad-hoc signed by default, so a rebuild may ask again;
-`SIGN_IDENTITY` in `scripts/build-app.sh` avoids that.
-
-**Only one program can hold the headphones' control channel.** While the app is connected, the
-`onemore` CLI and the vendor app on a phone cannot reach the headphones. Quit the app to use them.
+`scripts/build-app.sh` signs the app ad hoc, which gives every build a new code identity, so macOS
+may ask for Bluetooth permission again after a rebuild. Signing with a stable identity avoids that:
+`SIGN_IDENTITY="Apple Development: …" scripts/build-app.sh`.
 
 `onemore` embeds an `Info.plist` with a Bluetooth usage description (see `Package.swift`), so macOS
 can ask for Bluetooth permission. The permission is granted to the app that launches it, normally
