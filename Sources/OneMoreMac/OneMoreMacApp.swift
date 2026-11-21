@@ -1,26 +1,15 @@
+import AppKit
 import OneMoreBluetooth
-import OneMoreKit
-import SwiftUI
 
+/// A menu bar-only app (`LSUIElement` in its `Info.plist`): one status item, no windows.
 @main
-struct OneMoreMacApp: App {
-    @State private var connection: HeadphoneConnection
-
-    init() {
+enum OneMoreMacApp {
+    @MainActor static func main() {
         let connection = HeadphoneConnection()
+        let menu = StatusMenu(connection: connection)
         connection.start()
-        _connection = State(initialValue: connection)
-    }
-
-    var body: some Scene {
-        MenuBarExtra {
-            MenuContent(connection: connection)
-        } label: {
-            Image(nsImage: MenuBarIcon.image(
-                mode: connection.session?.state.listenMode,
-                connected: connection.session != nil
-            ))
+        withExtendedLifetime(menu) {
+            NSApplication.shared.run()
         }
-        .menuBarExtraStyle(.menu)
     }
 }

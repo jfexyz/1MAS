@@ -14,7 +14,7 @@ the same for probing. `docs/HARDWARE.md` records what has been verified on hardw
 | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Sources/OneMoreKit`       | The protocol: framing, commands, decoders, the model table, and `Session` (request/response and device state over any byte transport). No Bluetooth. |
 | `Sources/OneMoreBluetooth` | IOBluetooth: finding devices and their serial channel, `RFCOMMTransport`, and `HeadphoneConnection`, which connects and reconnects automatically.    |
-| `Sources/OneMoreMac`       | The SwiftUI menu bar app.                                                                                                                            |
+| `Sources/OneMoreMac`       | The menu bar app, in AppKit (`NSStatusItem` and `NSMenu`).                                                                                           |
 | `Sources/onemore`          | `onemore`, a CLI for probing the headphones.                                                                                                         |
 | `Support/OneMoreMac`       | The app's `Info.plist`.                                                                                                                              |
 | `scripts/build-app.sh`     | Builds and signs `build/1more-mac.app`.                                                                                                              |
