@@ -5,7 +5,7 @@ later EQ. Built first for the SonoFlow (HC905); other 1MORE models share the pro
 planned through a per-model capability table.
 
 Status: works on a SonoFlow (firmware 1.0.5). A menu bar app shows battery, EQ preset, and firmware,
-and switches between off, noise cancelling, and transparency; the `onemore` command-line tool does
+and switches between off, noise cancellation, and transparency; the `onemore` command-line tool does
 the same for probing. `docs/HARDWARE.md` records what has been verified on hardware.
 
 ## Layout
@@ -30,10 +30,10 @@ $(swift build --show-bin-path)/onemore --help
 ```
 
 The app is a menu bar item only (no Dock icon). The icon is the headphones with a letter for the
-current mode: **A** for active noise cancelling, **T** for transparency, **O** for off. It is dimmed
-when no headphones are connected. Its menu has a Launch at Login toggle, which registers the app
-where it is, so move it to `/Applications` first if you want that. On first launch macOS asks for
-Bluetooth permission. The app is ad-hoc signed by default, so a rebuild may ask again;
+current mode: **A** for active noise cancellation, **T** for transparency, **O** for off. It is
+dimmed when no headphones are connected. Its menu has a Launch at Login toggle, which registers the
+app where it is, so move it to `/Applications` first if you want that. On first launch macOS asks
+for Bluetooth permission. The app is ad-hoc signed by default, so a rebuild may ask again;
 `SIGN_IDENTITY` in `scripts/build-app.sh` avoids that.
 
 **Only one program can hold the headphones' control channel.** While the app is connected, the

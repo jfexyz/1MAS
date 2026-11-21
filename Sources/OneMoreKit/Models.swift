@@ -29,13 +29,13 @@ public extension ListenMode {
         switch self {
         case .off: "Off"
         // Starts with "A" to match the menu bar icon's letter.
-        case .strongANC: "Active Noise Cancelling"
-        case .mildANC: "Mild Noise Cancelling"
+        case .strongANC: "Active Noise Cancellation"
+        case .mildANC: "Mild Noise Cancellation"
         case .transparent: "Transparency"
         case .windReduction: "Wind Reduction"
         case .passThrough: "Pass-Through"
         case .voiceEnhancement: "Voice Enhancement"
-        case .adaptiveANC: "Adaptive Noise Cancelling"
+        case .adaptiveANC: "Adaptive Noise Cancellation"
         }
     }
 }

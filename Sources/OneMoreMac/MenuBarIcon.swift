@@ -2,7 +2,7 @@ import AppKit
 import OneMoreKit
 
 /// The menu bar icon: Apple's `headphones` SF Symbol, with a small letter in the open space under
-/// the headband for the listen mode: "A" for active noise cancelling, "T" for transparency, "O" for
+/// the headband for the listen mode: "A" for active noise cancellation, "T" for transparency, "O" for
 /// off, matching the first letters of the menu items. Dimmed, with no letter, while no headphones
 /// are connected (or before the mode is first read).
 enum MenuBarIcon {
