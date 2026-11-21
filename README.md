@@ -17,8 +17,9 @@ the same for probing. `docs/HARDWARE.md` records what has been verified on hardw
 | `Sources/OneMoreBluetooth` | IOBluetooth: finding devices and their serial channel, `RFCOMMTransport`, and `HeadphoneConnection`, which connects and reconnects automatically.    |
 | `Sources/OneMoreMac`       | The menu bar app, in AppKit (`NSStatusItem` and `NSMenu`).                                                                                           |
 | `Sources/onemore`          | `onemore`, a CLI for probing the headphones.                                                                                                         |
-| `Support/OneMoreMac`       | The app's `Info.plist`.                                                                                                                              |
+| `Support/OneMoreMac`       | The app's `Info.plist` and icon.                                                                                                                     |
 | `scripts/build-app.sh`     | Builds and signs `build/1more-mac.app`.                                                                                                              |
+| `scripts/make-icon.swift`  | Draws the app icon, `AppIcon.icns`. Its header says how to run it.                                                                                   |
 | `Tests/OneMoreKitTests`    | Unit tests, pinned to real packets from the public sources and the hardware.                                                                         |
 
 ## Building and running
