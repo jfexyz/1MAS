@@ -31,12 +31,15 @@ enum MenuBarIcon {
 
             if let letter {
                 let text = NSAttributedString(string: letter, attributes: [
-                    .font: NSFont.systemFont(ofSize: 6, weight: .bold),
+                    .font: NSFont.systemFont(ofSize: 7, weight: .bold),
                     .foregroundColor: NSColor.black.withAlphaComponent(alpha),
                 ])
                 let bounds = text.size()
-                // Centred in the space under the headband, clear of the ear cups.
-                text.draw(at: NSPoint(x: (size - bounds.width) / 2, y: frame.minY + height * 0.42 - bounds.height / 2))
+                // Centred in the space under the headband, clear of the ear cups. The A's point
+                // leaves its weight low, so it goes up half a point (one pixel on Retina) to look
+                // level with the T and O. The image is flipped: up is negative.
+                let lift: CGFloat = letter == "A" ? 0.5 : 0
+                text.draw(at: NSPoint(x: (size - bounds.width) / 2, y: frame.minY + height * 0.42 - bounds.height / 2 - lift))
             }
             return true
         }
