@@ -4,25 +4,38 @@ A macOS controller for 1MORE headphones: noise control (off / ANC / transparency
 later EQ. Built first for the SonoFlow (HC905); other 1MORE models share the protocol and are
 planned through a per-model capability table.
 
-Status: the protocol works on a SonoFlow (firmware 1.0.5) through the `onemore` command-line tool:
-battery, firmware, and switching between off, ANC, and transparency. `docs/HARDWARE.md` records what
-has been verified on hardware. A menu bar app follows.
+Status: works on a SonoFlow (firmware 1.0.5). A menu bar app shows battery, EQ preset, and firmware,
+and switches between off, noise cancelling, and transparency; the `onemore` command-line tool does
+the same for probing. `docs/HARDWARE.md` records what has been verified on hardware.
 
 ## Layout
 
-| Path                    | What it is                                                                         |
-| ----------------------- | ---------------------------------------------------------------------------------- |
-| `Sources/OneMoreKit`    | The protocol: frame encoding and stream parsing, commands, decoders. No Bluetooth. |
-| `Sources/onemore`       | `onemore`, a CLI that talks to the headphones over RFCOMM through IOBluetooth.     |
-| `Tests/OneMoreKitTests` | Unit tests, pinned to real packets from the public sources below.                  |
+| Path                       | What it is                                                                                                                                           |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Sources/OneMoreKit`       | The protocol: framing, commands, decoders, the model table, and `Session` (request/response and device state over any byte transport). No Bluetooth. |
+| `Sources/OneMoreBluetooth` | IOBluetooth: finding devices and their serial channel, `RFCOMMTransport`, and `HeadphoneConnection`, which connects and reconnects automatically.    |
+| `Sources/OneMoreMac`       | The SwiftUI menu bar app.                                                                                                                            |
+| `Sources/onemore`          | `onemore`, a CLI for probing the headphones.                                                                                                         |
+| `Support/OneMoreMac`       | The app's `Info.plist`.                                                                                                                              |
+| `scripts/build-app.sh`     | Builds and signs `build/1more-mac.app`.                                                                                                              |
+| `Tests/OneMoreKitTests`    | Unit tests, pinned to real packets from the public sources and the hardware.                                                                         |
 
 ## Building and running
 
 ```sh
 swift build
 swift test
+scripts/build-app.sh && open build/1more-mac.app
 $(swift build --show-bin-path)/onemore --help
 ```
+
+The app is a menu bar item only (no Dock icon). Its menu has a Launch at Login toggle, which
+registers the app where it is, so move it to `/Applications` first if you want that. On first launch
+macOS asks for Bluetooth permission. The app is ad-hoc signed by default, so a rebuild may ask
+again; `SIGN_IDENTITY` in `scripts/build-app.sh` avoids that.
+
+**Only one program can hold the headphones' control channel.** While the app is connected, the
+`onemore` CLI and the vendor app on a phone cannot reach the headphones. Quit the app to use them.
 
 `onemore` embeds an `Info.plist` with a Bluetooth usage description (see `Package.swift`), so macOS
 can ask for Bluetooth permission. The permission is granted to the app that launches it, normally
@@ -43,11 +56,11 @@ head(2) | command(2) | length(2) | sequence(2) | xor of the 8 header bytes(1) | 
 
 Requests start `11 01`, replies `01`. `Sources/OneMoreKit/Command.swift` lists the commands.
 
-**Safety.** The SonoFlow also exposes an `OTA1` firmware-update service over RFCOMM. The CLI never
+**Safety.** The SonoFlow also exposes an `OTA1` firmware-update service over RFCOMM. Nothing here
 opens a record whose name contains `OTA`, and `OneMoreKit` refuses the firmware-update and "delete
 music" commands (`49`, `4F`, `71`–`73`) whatever the caller asks. Note that IOBluetooth's own
-`getServiceRecord(for: 0x1101)` returns the `OTA1` record on this device, which is why the CLI
-matches the service class itself.
+`getServiceRecord(for: 0x1101)` returns the `OTA1` record on this device, which is why
+`DeviceDirectory` matches the service class itself.
 
 ### Sources
 
@@ -58,6 +71,16 @@ matches the service class itself.
 - [Gadgetbridge](https://codeberg.org/Freeyourgadget/Gadgetbridge/pulls/4637): hard-coded SonoFlow
   packets, tested on hardware. Its "unknown checksum" bytes are the sequence number and header XOR
   above; the unit tests check every one of them.
+
+## Later
+
+- **Firmware updates.** Newer SonoFlow firmware than 1.0.5 exists, but the vendor app fails to
+  download it. Updating would need the firmware's download location and the update protocol on the
+  `OTA1` channel, both unknown, and a failed update can brick the headphones. Until then the OTA
+  guards stay.
+- **EQ.** Preset writes (`69`) and the 10-band custom EQ (`53`/`54`) are documented by PairFree but
+  not yet verified on hardware.
+- **More models**, added to `ModelInfo.known` as each is verified.
 
 ## License
 

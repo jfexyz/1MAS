@@ -13,6 +13,7 @@ let package = Package(
         .library(name: "OneMoreKit", targets: ["OneMoreKit"]),
         .library(name: "OneMoreBluetooth", targets: ["OneMoreBluetooth"]),
         .executable(name: "onemore", targets: ["onemore"]),
+        .executable(name: "OneMoreMac", targets: ["OneMoreMac"]),
     ],
     targets: [
         // Pure protocol code: framing, commands, decoding, the session. No Bluetooth, fully
@@ -37,6 +38,12 @@ let package = Package(
                     "-Xlinker", "\(packageRoot)/Sources/onemore/Info.plist",
                 ]),
             ]
+        ),
+        // The menu bar app. `scripts/build-app.sh` wraps it in an app bundle with
+        // `Support/OneMoreMac/Info.plist`.
+        .executableTarget(
+            name: "OneMoreMac",
+            dependencies: ["OneMoreKit", "OneMoreBluetooth"]
         ),
         .testTarget(name: "OneMoreKitTests", dependencies: ["OneMoreKit"]),
     ]
