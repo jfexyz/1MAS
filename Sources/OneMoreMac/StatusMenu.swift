@@ -61,8 +61,8 @@ final class StatusMenu: NSObject, NSMenuDelegate {
             menu.addItem(info(name))
             if let session = connection.session, let info = session.state.info {
                 addAligned("Battery", "\(info.battery(for: session.model))%")
-            } else if let status = statusLine {
-                menu.addItem(info(status))
+            } else {
+                statusLines.forEach { menu.addItem(info($0)) }
             }
         } else {
             menu.addItem(info("No supported 1MORE headphones paired"))
@@ -132,13 +132,15 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         }
     }
 
-    /// The second line while there is no battery to show.
-    private var statusLine: String? {
+    /// The lines in place of the battery while there is none to show.
+    private var statusLines: [String] {
         switch connection.status {
-        case .noDevice, .connected: nil
-        case .disconnected: "Not connected"
-        case .connecting: "Connecting…"
-        case .failed(_, let reason): "Can't connect: \(reason)"
+        case .noDevice, .connected: []
+        case .disconnected: ["Not connected"]
+        case .connecting: ["Connecting…"]
+        // The usual cause is another client holding the control channel, which allows only one:
+        // the vendor's phone app or the `onemore` CLI. The technical reason is not shown.
+        case .failed: ["Unable to connect", "Another app might have control"]
         }
     }
 
