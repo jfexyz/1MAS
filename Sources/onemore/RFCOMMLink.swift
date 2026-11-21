@@ -56,6 +56,11 @@ final class RFCOMMLink: NSObject, @preconcurrency IOBluetoothRFCOMMChannelDelega
 
     func open(channelID: BluetoothRFCOMMChannelID) throws {
         log("opening RFCOMM channel \(channelID)")
+        // Found on hardware (macOS 27.2): opening the channel before the run loop has turned at all
+        // never completes, and `openRFCOMMChannelSync` fails with kIOReturnError. A short warm-up
+        // makes the async open succeed every time. Exact cause unknown; the app will have a live
+        // run loop anyway.
+        _ = spin(timeout: 1, until: { false })
         var opened: IOBluetoothRFCOMMChannel?
         let status = device.openRFCOMMChannelAsync(&opened, withChannelID: channelID, delegate: self)
         guard status == kIOReturnSuccess else { throw LinkError.openFailed(status) }

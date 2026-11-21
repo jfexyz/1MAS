@@ -4,8 +4,9 @@ A macOS controller for 1MORE headphones: noise control (off / ANC / transparency
 later EQ. Built first for the SonoFlow (HC905); other 1MORE models share the protocol and are
 planned through a per-model capability table.
 
-Status: **phase 0**, proving the protocol on real hardware with a command-line tool. A menu bar app
-follows.
+Status: the protocol works on a SonoFlow (firmware 1.0.5) through the `onemore` command-line tool:
+battery, firmware, and switching between off, ANC, and transparency. `docs/HARDWARE.md` records what
+has been verified on hardware. A menu bar app follows.
 
 ## Layout
 
@@ -28,7 +29,8 @@ can ask for Bluetooth permission. The permission is granted to the app that laun
 your terminal.
 
 Commands: `devices`, `sdp [--refresh]`, `probe`, `mode off|anc|transparent`, `raw <cmd> [payload]`,
-and `listen <seconds>`. Add `-v` to log every byte sent and received.
+and `listen <seconds>`. Add `-v` to log every byte sent and received, and `--no-handshake` to skip
+the `4D` handshake the vendor app sends first (the SonoFlow does not need it).
 
 ## Protocol
 

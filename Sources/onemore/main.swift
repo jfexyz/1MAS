@@ -3,7 +3,7 @@ import IOBluetooth
 import OneMoreKit
 
 let usage = """
-    usage: onemore [--device NAME|ADDRESS] [--channel N] [-v] <command>
+    usage: onemore [--device NAME|ADDRESS] [--channel N] [--no-handshake] [-v] <command>
 
     commands:
       devices                 list paired devices whose name contains --device (default "1MORE")
@@ -20,6 +20,7 @@ struct Options {
     var channel: BluetoothRFCOMMChannelID?
     var verbose = false
     var refresh = false
+    var skipHandshake = false
     var arguments: [String] = []
 }
 
@@ -38,6 +39,7 @@ func parseOptions() -> Options {
             options.channel = value
         case "-v", "--verbose": options.verbose = true
         case "--refresh": options.refresh = true
+        case "--no-handshake": options.skipHandshake = true
         case "-h", "--help": print(usage); exit(0)
         default: options.arguments.append(arg)
         }
@@ -182,7 +184,7 @@ func run() throws {
     case "probe":
         let link = try connect(device, options)
         defer { link.close() }
-        handshake(link)
+        if !options.skipHandshake { handshake(link) }
         let info = try link.request(Command.deviceInfo.rawValue)
         print("device info: \(info.payload.hex)")
         if let decoded = DeviceInfo(payload: info.payload) { print("  \(decoded)") }
@@ -199,7 +201,7 @@ func run() throws {
         else { fail("mode needs off, anc, transparent, or 0-7") }
         let link = try connect(device, options)
         defer { link.close() }
-        handshake(link)
+        if !options.skipHandshake { handshake(link) }
         let result = try link.request(Command.setListenMode.rawValue, payload: [value])
         print("set \(describe(value)): \(result.payload.hex)")
         for delay in [0.3, 1.0, 2.0] {
@@ -216,7 +218,7 @@ func run() throws {
         guard !Command.forbidden.contains(cmd) else { fail(String(format: "%04X is forbidden", cmd)) }
         let link = try connect(device, options)
         defer { link.close() }
-        handshake(link)
+        if !options.skipHandshake { handshake(link) }
         let reply = try link.request(cmd, payload: payload)
         print(String(format: "%04X -> %@", cmd, reply.payload.hex))
 
@@ -224,7 +226,7 @@ func run() throws {
         let seconds = rest.first.flatMap(TimeInterval.init) ?? 10
         let link = try connect(device, options)
         defer { link.close() }
-        handshake(link)
+        if !options.skipHandshake { handshake(link) }
         link.listen(for: seconds)
 
     default:
