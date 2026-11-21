@@ -69,6 +69,8 @@ public final class Session {
     @ObservationIgnored public var unsolicitedObserver: ((Frame) -> Void)?
     /// Called once when the transport closes.
     @ObservationIgnored public var onClose: (() -> Void)?
+    /// How long `refresh()` waits for a read the model may not answer.
+    @ObservationIgnored public var optionalReadTimeout: Duration = .seconds(3)
 
     @ObservationIgnored private let transport: ByteTransport
     @ObservationIgnored private var parser = FrameParser()
@@ -96,13 +98,28 @@ public final class Session {
         _ = try? await request(Command.handshake.rawValue, payload: [0x01], timeout: .seconds(1))
     }
 
-    /// Reads battery and firmware, listen mode, and EQ preset into `state`.
+    /// Reads battery and firmware, then whichever of listen mode, EQ preset, and dual device the
+    /// model has, into `state`. Only the first must be answered: most models have not been tried,
+    /// so one that ignores a read keeps that field `nil`, and the menu leaves the control out.
     public func refresh() async throws {
         _ = try await request(Command.deviceInfo.rawValue)
-        _ = try await request(Command.getListenMode.rawValue)
-        _ = try await request(Command.getEQPreset.rawValue)
+        if !model.listenModes.isEmpty {
+            try await optionalRead(.getListenMode)
+        }
+        if !model.eqPresets.isEmpty {
+            try await optionalRead(.getEQPreset)
+        }
         if model.dualDevice {
-            _ = try await request(Command.getDualDevice.rawValue)
+            try await optionalRead(.getDualDevice)
+        }
+    }
+
+    /// A read that may go unanswered. Any other failure, such as the connection closing, still
+    /// throws.
+    private func optionalRead(_ command: Command) async throws {
+        do {
+            _ = try await request(command.rawValue, timeout: optionalReadTimeout)
+        } catch SessionError.timeout {
         }
     }
 
@@ -118,7 +135,7 @@ public final class Session {
 
     /// Sets the EQ preset, then reads it back. Unlike a listen mode change, no push was seen.
     public func setEQPreset(_ id: UInt8) async throws {
-        guard model.eqPresets.contains(id) else { throw SessionError.unsupportedEQPreset(id) }
+        guard model.eqPresets.contains(where: { $0.id == id }) else { throw SessionError.unsupportedEQPreset(id) }
         try await write(.setEQPreset, id, readBack: .getEQPreset)
     }
 

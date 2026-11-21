@@ -98,8 +98,9 @@ func openSession(_ device: IOBluetoothDevice, _ options: Options) async throws -
     if options.verbose {
         transport.byteObserver = { bytes, outgoing in log("\(outgoing ? "->" : "<-") \(bytes.hex)") }
     }
-    // Unknown models get the SonoFlow's table; the CLI is for probing, so it does not refuse them.
-    let model = ModelInfo.matching(bluetoothName: device.name ?? "") ?? .sonoFlow
+    // A device that is not a 1MORE at all gets the generic model; the CLI is for probing, so it
+    // does not refuse it.
+    let model = ModelInfo.matching(bluetoothName: device.name ?? "") ?? .generic(bluetoothName: device.name ?? "")
     let session = Session(transport: transport, model: model)
     session.unsolicitedObserver = { frame in
         print(String(format: "unsolicited %04X: %@", frame.command, frame.payload.hex))
@@ -142,7 +143,7 @@ func run() async throws {
         let mode = try await session.request(Command.getListenMode.rawValue)
         print("listen mode: \(mode.payload.hex) -> \(mode.payload.first.map(describe) ?? "?")")
         let preset = try await session.request(Command.getEQPreset.rawValue)
-        print("EQ preset: \(preset.payload.hex) -> \(preset.payload.first.map(EQPreset.name) ?? "?")")
+        print("EQ preset: \(preset.payload.hex) -> \(preset.payload.first.map(session.model.eqPresetName) ?? "?")")
         try await Task.sleep(for: .seconds(1))
 
     case "mode":

@@ -9,8 +9,8 @@ enables/disables dual device connection. The `unomas` command-line tool does the
 **This app is not affiliated with nor endorsed by 1MORE.**
 
 Built first for the original SonoFlow (model HC905); other 1MORE models share the protocol and are
-planned (pull requests are welcome). [Models](#models) lists them and what each one can do.
-`docs/HARDWARE.md` records what has been verified on actual hardware.
+planned (and might already work... pull requests are welcome). [Models](#models) lists them and what
+each one can do. `docs/HARDWARE.md` records what has been verified on actual hardware.
 
 Status: working and testing with the original SonoFlow (model HC905) on firmware v1.0.5.
 
@@ -18,16 +18,17 @@ Requires macOS 14 (Sonoma) or later; so far tested only on macOS 27.
 
 ## Layout
 
-| Path                      | What it is                                                                                                                                           |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Sources/UnoMasKit`       | The protocol: framing, commands, decoders, the model table, and `Session` (request/response and device state over any byte transport). No Bluetooth. |
-| `Sources/UnoMasBluetooth` | IOBluetooth: finding devices and their serial channel, `RFCOMMTransport`, and `HeadphoneConnection`, which connects and reconnects automatically.    |
-| `Sources/UnoMasApp`       | The menu bar app, in AppKit (`NSStatusItem` and `NSMenu`).                                                                                           |
-| `Sources/unomas`          | `unomas`, a CLI for probing the headphones.                                                                                                          |
-| `Support/UnoMasApp`       | The app's `Info.plist` and icon.                                                                                                                     |
-| `scripts/build-app.sh`    | Builds and signs `build/1MAS.app`.                                                                                                                   |
-| `scripts/make-icon.swift` | Writes the app icon, `AppIcon.icon`, for Icon Composer. Its header says how to run it.                                                               |
-| `Tests/UnoMasKitTests`    | Unit tests, pinned to real packets from the public sources and the hardware.                                                                         |
+| Path                          | What it is                                                                                                                                           |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Sources/UnoMasKit`           | The protocol: framing, commands, decoders, the model table, and `Session` (request/response and device state over any byte transport). No Bluetooth. |
+| `Sources/UnoMasBluetooth`     | IOBluetooth: finding devices and their serial channel, `RFCOMMTransport`, and `HeadphoneConnection`, which connects and reconnects automatically.    |
+| `Sources/UnoMasApp`           | The menu bar app, in AppKit (`NSStatusItem` and `NSMenu`).                                                                                           |
+| `Sources/unomas`              | `unomas`, a CLI for probing the headphones.                                                                                                          |
+| `Support/UnoMasApp`           | The app's `Info.plist` and icon.                                                                                                                     |
+| `scripts/build-app.sh`        | Builds and signs `build/1MAS.app`.                                                                                                                   |
+| `scripts/make-icon.swift`     | Writes the app icon, `AppIcon.icon`, for Icon Composer. Its header says how to run it.                                                               |
+| `scripts/import-models.swift` | Writes the model table, `Sources/UnoMasKit/ModelTable.swift`, from PairFree's model data. Its header says how to run it.                             |
+| `Tests/UnoMasKitTests`        | Unit tests, pinned to real packets from the public sources and the hardware.                                                                         |
 
 ## Installing
 
@@ -97,71 +98,75 @@ the app shows "Another app might have control", close the phone app.
 
 ## Models
 
-1MAS connects only to models it knows, by their exact Bluetooth name, so a model marked "Not yet" is
-ignored even when it is paired. Adding one takes an entry in `ModelInfo.known` and a check on the
-real headphones, recorded in `docs/HARDWARE.md`.
+1MAS recognises each model below by its Bluetooth name, as 1MORE's apps do, and offers the controls
+that model has. Any other device whose name starts with "1MORE", such as a model newer than this
+list, gets the battery, the firmware, and off/noise cancellation/transparency if it answers for
+them. A control the headphones do not answer is left out of the menu.
 
-What each model can do comes from
+Only the SonoFlow has been tried on real headphones. What the others can do comes from
 [PairFree's model data](https://github.com/Omega-Destroyer/PairFree/blob/main/data/1more/devices.json),
-which is taken from 1MORE's own product list and apps, as of 2026-11-21.
+which PairFree took from 1MORE's own product list and decompiled apps, not from hardware.
+`scripts/import-models.swift` turns it into the app's model table. With an untested model connected,
+the menu shows **Untested Model**; its **Help Support** link leads here, where an issue saying
+whether it works, or what does not, is very welcome.
 
 - ✅ Works in 1MAS, verified on the hardware.
-- ○ The model has it; 1MAS does not support it yet.
+- ○ The model has it, and 1MAS offers it, untested. Custom EQ is not offered yet on any model.
 - — The model does not have it.
 
 Noise control lists the modes besides off. EQ presets gives the number of presets. The S22Ultra and
 S52 are controlled through Tuya's platform rather than this protocol, so 1MAS cannot reach them.
 
-| Model              | Number        | Type       | Noise control                                                                                | EQ presets | Custom EQ | Dual device | 1MAS                       |
-| ------------------ | ------------- | ---------- | -------------------------------------------------------------------------------------------- | ---------- | --------- | ----------- | -------------------------- |
-| G50                | G50           | Headphones | —                                                                                            | ○ 6        | ○         | ○           | Not yet                    |
-| HQ20               | HQ20          | Headphones | —                                                                                            | ○ 6        | ○         | ○           | Not yet                    |
-| HQ31               | HQ31          | Headphones | ○ ANC, transparency                                                                          | ○ 12       | ○         | ○           | Not yet                    |
-| HQ36               | HQ36          | Headphones | ○ ANC, transparency                                                                          | ○ 6        | ○         | ○           | Not yet                    |
-| HQ51               | HQ51          | Headphones | ○ ANC, transparency                                                                          | ○ 12       | ○         | ○           | Not yet                    |
-| HQ60               | HQ60          | Headphones | ○ ANC, transparency                                                                          | ○ 12       | ○         | ○           | Not yet                    |
-| NANO               | S200          | Headphones | —                                                                                            | ○ 6        | —         | ○           | Not yet                    |
-| SonoFlow           | HC905         | Headphones | ✅ ANC, transparency                                                                         | ✅ 12      | ○         | ✅          | Supported (firmware 1.0.5) |
-| SonoFlow QC30      | SonoFlow QC30 | Headphones | ○ ANC, transparency                                                                          | ○ 12       | ○         | ○           | Not yet                    |
-| SonoFlow S         | HC905S        | Headphones | ○ ANC, transparency                                                                          | ○ 12       | ○         | ○           | Not yet                    |
-| SonoFlow SE        | HC306         | Headphones | ○ ANC, transparency                                                                          | ○ 12       | ○         | ○           | Not yet                    |
-| AERO Q32           | AERO Q32      | Earbuds    | ○ ANC, transparency                                                                          | ○ 6        | —         | ○           | Not yet                    |
-| Aero               | ES903         | Earbuds    | ○ adaptive ANC, ANC, mild ANC, wind reduction, transparency, pass-through                    | ○ 12       | ○         | ○           | Not yet                    |
-| ColorBuds 2        | ES602         | Earbuds    | ○ ANC, transparency                                                                          | ○ 22       | —         | —           | Not yet                    |
-| ComfoBuds 2        | ES303         | Earbuds    | —                                                                                            | ○ 12       | ○         | —           | Not yet                    |
-| ComfoBuds Mini     | ES603         | Earbuds    | ○ ANC, mild ANC, wind reduction, transparency                                                | —          | —         | —           | Not yet                    |
-| ComfoBuds Pro      | ES901         | Earbuds    | ○ ANC, mild ANC, wind reduction, transparency                                                | ○ 22       | —         | —           | Not yet                    |
-| EVO                | EH902         | Earbuds    | ○ adaptive ANC, ANC, mild ANC, wind reduction, transparency, pass-through, voice enhancement | ○ 12       | ○         | ○           | Not yet                    |
-| Fit                | EF906         | Earbuds    | —                                                                                            | ○ 12       | —         | ○           | Not yet                    |
-| Fit SE             | EF606         | Earbuds    | —                                                                                            | —          | ○         | —           | Not yet                    |
-| PistonBuds PRO Q30 | EC305         | Earbuds    | ○ adaptive ANC, ANC, mild ANC, wind reduction, transparency                                  | ○ 12       | ○         | ○           | Not yet                    |
-| PistonBuds Pro     | EC302         | Earbuds    | ○ ANC, wind reduction, transparency                                                          | ○ 12       | ○         | —           | Not yet                    |
-| Q12                | Q12           | Earbuds    | —                                                                                            | ○ 6        | ○         | ○           | Not yet                    |
-| Q21                | Q21           | Earbuds    | ○ ANC, transparency                                                                          | ○ 6        | —         | ○           | Not yet                    |
-| Q22                | Q22           | Earbuds    | ○ ANC, transparency                                                                          | ○ 12       | —         | ○           | Not yet                    |
-| Q50                | Q50           | Earbuds    | ○ ANC, mild ANC, wind reduction, transparency                                                | ○ 6        | —         | ○           | Not yet                    |
-| S-31               | S-31          | Earbuds    | —                                                                                            | ○ 4        | —         | —           | Not yet                    |
-| S10AI              | S10AI         | Earbuds    | —                                                                                            | ○ 6        | —         | —           | Not yet                    |
-| S10S               | S10S          | Earbuds    | —                                                                                            | ○ 6        | —         | —           | Not yet                    |
-| S11                | S11           | Earbuds    | —                                                                                            | ○ 6        | —         | —           | Not yet                    |
-| S12                | S12           | Earbuds    | —                                                                                            | ○ 6        | —         | —           | Not yet                    |
-| S15                | S15           | Earbuds    | —                                                                                            | ○ 12       | ○         | ○           | Not yet                    |
-| S20                | S20           | Earbuds    | —                                                                                            | ○ 6        | —         | —           | Not yet                    |
-| S20NOVA            | S20NOVA       | Earbuds    | —                                                                                            | ○ 6        | —         | ○           | Not yet                    |
-| S20PRO             | S20PRO        | Earbuds    | —                                                                                            | ○ 6        | —         | ○           | Not yet                    |
-| S20Ultra           | S20Ultra      | Earbuds    | —                                                                                            | ○ 6        | —         | ○           | Not yet                    |
-| S21                | S21           | Earbuds    | —                                                                                            | ○ 6        | —         | ○           | Not yet                    |
-| S21Air             | S21Air        | Earbuds    | —                                                                                            | ○ 12       | —         | ○           | Not yet                    |
-| S22                | S22           | Earbuds    | —                                                                                            | ○ 6        | —         | ○           | Not yet                    |
-| S22Ultra           | S22Ultra      | Earbuds    | —                                                                                            | —          | —         | —           | Not possible (Tuya)        |
-| S25                | S25           | Earbuds    | —                                                                                            | ○ 6        | —         | ○           | Not yet                    |
-| S31                | S31           | Earbuds    | —                                                                                            | ○ 12       | —         | —           | Not yet                    |
-| S32                | S32           | Earbuds    | —                                                                                            | ○ 12       | —         | —           | Not yet                    |
-| S51                | S51           | Earbuds    | —                                                                                            | ○ 6        | —         | ○           | Not yet                    |
-| S52                | S52           | Earbuds    | —                                                                                            | —          | —         | —           | Not possible (Tuya)        |
-| S70                | S70           | Earbuds    | —                                                                                            | ○ 6        | —         | ○           | Not yet                    |
-| S90                | S90           | Earbuds    | ○ adaptive ANC, ANC, mild ANC, wind reduction, transparency, pass-through, voice enhancement | ○ 12       | —         | ○           | Not yet                    |
-| Z30                | Z30           | Earbuds    | —                                                                                            | —          | —         | —           | Not yet                    |
+| Model              | Number        | Type       | Noise control                                                                                | EQ presets | Custom EQ | Dual device | 1MAS                      |
+| ------------------ | ------------- | ---------- | -------------------------------------------------------------------------------------------- | ---------- | --------- | ----------- | ------------------------- |
+| G50                | G50           | Headphones | —                                                                                            | ○ 6        | ○         | ○           | Untested                  |
+| HQ20               | HQ20          | Headphones | —                                                                                            | ○ 6        | ○         | ○           | Untested                  |
+| HQ31               | HQ31          | Headphones | ○ ANC, transparency                                                                          | ○ 12       | ○         | ○           | Untested                  |
+| HQ36               | HQ36          | Headphones | ○ ANC, transparency                                                                          | ○ 6        | ○         | ○           | Untested                  |
+| HQ51               | HQ51          | Headphones | ○ ANC, transparency                                                                          | ○ 12       | ○         | ○           | Untested                  |
+| HQ60               | HQ60          | Headphones | ○ ANC, transparency                                                                          | ○ 12       | ○         | ○           | Untested                  |
+| NANO               | S200          | Headphones | —                                                                                            | ○ 6        | —         | ○           | Untested                  |
+| SonoFlow           | HC905         | Headphones | ✅ ANC, transparency                                                                         | ✅ 12      | ○         | ✅          | Verified (firmware 1.0.5) |
+| SonoFlow QC30      | SonoFlow QC30 | Headphones | ○ ANC, transparency                                                                          | ○ 12       | ○         | ○           | Untested                  |
+| SonoFlow S         | HC905S        | Headphones | ○ ANC, transparency                                                                          | ○ 12       | ○         | ○           | Untested                  |
+| SonoFlow SE        | HC306         | Headphones | ○ ANC, transparency                                                                          | ○ 12       | ○         | ○           | Untested                  |
+| AERO Q32           | AERO Q32      | Earbuds    | ○ ANC, transparency                                                                          | ○ 6        | —         | ○           | Untested                  |
+| Aero               | ES903         | Earbuds    | ○ adaptive ANC, ANC, mild ANC, wind reduction, transparency, pass-through                    | ○ 12       | ○         | ○           | Untested                  |
+| ColorBuds 2        | ES602         | Earbuds    | ○ ANC, transparency                                                                          | ○ 22       | —         | —           | Untested                  |
+| ComfoBuds 2        | ES303         | Earbuds    | —                                                                                            | ○ 12       | ○         | —           | Untested                  |
+| ComfoBuds Mini     | ES603         | Earbuds    | ○ ANC, mild ANC, wind reduction, transparency                                                | —          | —         | —           | Untested                  |
+| ComfoBuds Pro      | ES901         | Earbuds    | ○ ANC, mild ANC, wind reduction, transparency                                                | ○ 22       | —         | —           | Untested                  |
+| EVO                | EH902         | Earbuds    | ○ adaptive ANC, ANC, mild ANC, wind reduction, transparency, pass-through, voice enhancement | ○ 12       | ○         | ○           | Untested                  |
+| Fit                | EF906         | Earbuds    | —                                                                                            | ○ 12       | —         | ○           | Untested                  |
+| Fit SE             | EF606         | Earbuds    | —                                                                                            | —          | ○         | —           | Untested                  |
+| PistonBuds PRO Q30 | EC305         | Earbuds    | ○ adaptive ANC, ANC, mild ANC, wind reduction, transparency                                  | ○ 12       | ○         | ○           | Untested                  |
+| PistonBuds Pro     | EC302         | Earbuds    | ○ ANC, wind reduction, transparency                                                          | ○ 12       | ○         | —           | Untested                  |
+| Q12                | Q12           | Earbuds    | —                                                                                            | ○ 6        | ○         | ○           | Untested                  |
+| Q21                | Q21           | Earbuds    | ○ ANC, transparency                                                                          | ○ 6        | —         | ○           | Untested                  |
+| Q22                | Q22           | Earbuds    | ○ ANC, transparency                                                                          | ○ 12       | —         | ○           | Untested                  |
+| Q50                | Q50           | Earbuds    | ○ ANC, mild ANC, wind reduction, transparency                                                | ○ 6        | —         | ○           | Untested                  |
+| S-31               | S-31          | Earbuds    | —                                                                                            | ○ 4        | —         | —           | Untested                  |
+| S10AI              | S10AI         | Earbuds    | —                                                                                            | ○ 6        | —         | —           | Untested                  |
+| S10S               | S10S          | Earbuds    | —                                                                                            | ○ 6        | —         | —           | Untested                  |
+| S11                | S11           | Earbuds    | —                                                                                            | ○ 6        | —         | —           | Untested                  |
+| S12                | S12           | Earbuds    | —                                                                                            | ○ 6        | —         | —           | Untested                  |
+| S15                | S15           | Earbuds    | —                                                                                            | ○ 12       | ○         | ○           | Untested                  |
+| S20                | S20           | Earbuds    | —                                                                                            | ○ 6        | —         | —           | Untested                  |
+| S20NOVA            | S20NOVA       | Earbuds    | —                                                                                            | ○ 6        | —         | ○           | Untested                  |
+| S20PRO             | S20PRO        | Earbuds    | —                                                                                            | ○ 6        | —         | ○           | Untested                  |
+| S20Ultra           | S20Ultra      | Earbuds    | —                                                                                            | ○ 6        | —         | ○           | Untested                  |
+| S21                | S21           | Earbuds    | —                                                                                            | ○ 6        | —         | ○           | Untested                  |
+| S21Air             | S21Air        | Earbuds    | —                                                                                            | ○ 12       | —         | ○           | Untested                  |
+| S22                | S22           | Earbuds    | —                                                                                            | ○ 6        | —         | ○           | Untested                  |
+| S22Ultra           | S22Ultra      | Earbuds    | —                                                                                            | —          | —         | —           | Not possible (Tuya)       |
+| S25                | S25           | Earbuds    | —                                                                                            | ○ 6        | —         | ○           | Untested                  |
+| S31                | S31           | Earbuds    | —                                                                                            | ○ 12       | —         | —           | Untested                  |
+| S32                | S32           | Earbuds    | —                                                                                            | ○ 12       | —         | —           | Untested                  |
+| S51                | S51           | Earbuds    | —                                                                                            | ○ 6        | —         | ○           | Untested                  |
+| S52                | S52           | Earbuds    | —                                                                                            | —          | —         | —           | Not possible (Tuya)       |
+| S70                | S70           | Earbuds    | —                                                                                            | ○ 6        | —         | ○           | Untested                  |
+| S90                | S90           | Earbuds    | ○ adaptive ANC, ANC, mild ANC, wind reduction, transparency, pass-through, voice enhancement | ○ 12       | —         | ○           | Untested                  |
+| Z30                | Z30           | Earbuds    | —                                                                                            | —          | —         | —           | Untested                  |
 
 ## Development
 
@@ -219,7 +224,8 @@ music" commands (`49`, `4F`, `71`–`73`) whatever the caller asks. Note that IO
   guards stay.
 - **Custom EQ.** The 10-band curve (`54` read, `53` write; ±3 dB per band) reads correctly on the
   SonoFlow, but writing it, and the menu's Custom preset, need an editor window first.
-- **More models**, added to `ModelInfo.known` as each is verified.
+- **More verified models.** Each one confirmed working gets `verified` in
+  `scripts/import-models.swift` and its evidence in `docs/HARDWARE.md`.
 - **Low-battery notification**, say at 20% and 10%. The battery is already read every five minutes.
 - **A global shortcut to cycle noise control.** Carbon's `RegisterEventHotKey` needs no
   Accessibility permission.

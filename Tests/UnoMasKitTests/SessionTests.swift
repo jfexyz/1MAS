@@ -52,6 +52,43 @@ struct SessionTests {
         #expect(transport.sent.map(\.sequence) == [0, 1, 2, 3])
     }
 
+    @Test func refreshToleratesUnansweredOptionalReads() async throws {
+        let transport = FakeTransport()
+        // Answers the battery read and the EQ preset; ignores the listen mode and dual device.
+        transport.responder = { request in
+            switch request.command {
+            case 0x4E: [reply(to: request, [UInt8](hex: "00 01 00 05 46 00 00 00 00 00")!)]
+            case 0x6A: [reply(to: request, [0x0A])]
+            default: []
+            }
+        }
+        let session = Session(transport: transport, model: .sonoFlow)
+        session.optionalReadTimeout = .milliseconds(50)
+        try await session.refresh()
+
+        #expect(session.state.info?.battery(for: .sonoFlow) == 70)
+        #expect(session.state.listenModeValue == nil)
+        #expect(session.state.eqPreset == 0x0A)
+        #expect(session.state.dualDevice == nil)
+    }
+
+    @Test func refreshStillNeedsTheBatteryRead() async {
+        let session = Session(transport: FakeTransport(), model: .sonoFlow)
+        await #expect(throws: SessionError.timeout(command: 0x4E)) {
+            try await session.refresh()
+        }
+    }
+
+    @Test func refreshSkipsReadsForControlsTheModelLacks() async throws {
+        let transport = FakeTransport()
+        transport.responder = { [reply(to: $0, [UInt8](hex: "00 01 00 05 46 00 00 00 00 00")!)] }
+        let model = ModelInfo(bluetoothName: "1MORE Test", model: "T1", kind: .headphones,
+                              listenModes: [], eqPresets: [], dualDevice: false)
+        let session = Session(transport: transport, model: model)
+        try await session.refresh()
+        #expect(transport.sent.map(\.command) == [0x4E])
+    }
+
     @Test func setDualDeviceWritesWithoutReadingBack() async throws {
         let transport = FakeTransport()
         // The SonoFlow acknowledges, then restarts: nothing answers a read after that.

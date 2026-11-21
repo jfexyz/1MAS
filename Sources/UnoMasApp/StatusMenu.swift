@@ -65,8 +65,8 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         menu.removeAllItems()
         // Label-and-value rows. Their titles are set last, once the menu's width is known.
         var aligned: [(item: NSMenuItem, label: String, value: String)] = []
-        func addAligned(_ label: String, _ value: String) {
-            let item = info("")
+        func addAligned(_ label: String, _ value: String, item: NSMenuItem? = nil) {
+            let item = item ?? info("")
             menu.addItem(item)
             aligned.append((item, label, value))
         }
@@ -89,36 +89,39 @@ final class StatusMenu: NSObject, NSMenuDelegate {
                 menu.addItem(output)
             }
         } else {
-            menu.addItem(info("No supported 1MORE headphones paired"))
+            menu.addItem(info("No 1MORE headphones paired"))
         }
 
         if let session = connection.session {
-            menu.addItem(.separator())
-            menu.addItem(.sectionHeader(title: "Noise Control"))
-            let current = session.state.listenMode
-            for mode in session.model.listenModes {
-                let item = NSMenuItem(title: mode.label, action: #selector(selectListenMode(_:)), keyEquivalent: "")
-                item.target = self
-                item.tag = Int(mode.rawValue)
-                item.state = mode == current ? .on : .off
-                menu.addItem(item)
+            // Each control is shown only if the model has it and answered its read: most models
+            // have not been tried, and one may not answer.
+            if !session.model.listenModes.isEmpty, session.state.listenModeValue != nil {
+                menu.addItem(.separator())
+                menu.addItem(.sectionHeader(title: "Noise Control"))
+                let current = session.state.listenMode
+                for mode in session.model.listenModes {
+                    let item = NSMenuItem(title: mode.label, action: #selector(selectListenMode(_:)), keyEquivalent: "")
+                    item.target = self
+                    item.tag = Int(mode.rawValue)
+                    item.state = mode == current ? .on : .off
+                    menu.addItem(item)
+                }
             }
 
-            if !session.model.eqPresets.isEmpty {
+            if !session.model.eqPresets.isEmpty, let current = session.state.eqPreset {
                 menu.addItem(.separator())
                 menu.addItem(.sectionHeader(title: "Equalizer"))
-                let preset = session.state.eqPreset
-                for id in session.model.eqPresets {
-                    let item = NSMenuItem(title: EQPreset.name(id), action: #selector(selectEQPreset(_:)), keyEquivalent: "")
+                for preset in session.model.eqPresets {
+                    let item = NSMenuItem(title: preset.name, action: #selector(selectEQPreset(_:)), keyEquivalent: "")
                     item.target = self
-                    item.tag = Int(id)
-                    item.state = id == preset ? .on : .off
+                    item.tag = Int(preset.id)
+                    item.state = preset.id == current ? .on : .off
                     menu.addItem(item)
                 }
                 // A preset set elsewhere that this menu does not offer, such as Custom from the
                 // vendor app: shown checked so the menu still says what is active.
-                if let preset, !session.model.eqPresets.contains(preset) {
-                    let item = info(EQPreset.name(preset))
+                if !session.model.eqPresets.contains(where: { $0.id == current }) {
+                    let item = info(session.model.eqPresetName(current))
                     item.state = .on
                     menu.addItem(item)
                 }
@@ -135,6 +138,11 @@ final class StatusMenu: NSObject, NSMenuDelegate {
 
             menu.addItem(.separator())
             addAligned("Model", session.model.model)
+            if !session.model.verified {
+                let item = NSMenuItem(title: "", action: #selector(helpSupport), keyEquivalent: "")
+                item.target = self
+                addAligned("Untested Model", "Help Support", item: item)
+            }
             if let firmware = session.state.info?.firmware(for: session.model) {
                 addAligned("Firmware", firmware)
             }
@@ -168,8 +176,9 @@ final class StatusMenu: NSObject, NSMenuDelegate {
     }
 
     /// Titles each row `label`, then `value` right-aligned with a tab stop at the widest title in
-    /// the menu, which is the menu's right edge as long as no item has a key equivalent. Both are
-    /// drawn in the disabled items' grey, since these rows are information only.
+    /// the menu, which is the menu's right edge as long as no item has a key equivalent. The label
+    /// is drawn in the disabled items' grey, and so is the value unless the item can be clicked,
+    /// when the value names the action (Help Support). A highlighted item is drawn in white.
     private func alignValues(_ rows: [(item: NSMenuItem, label: String, value: String)]) {
         let font = NSFont.menuFont(ofSize: 0)
         func width(_ text: String) -> CGFloat {
@@ -182,7 +191,12 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         style.tabStops = [NSTextTab(textAlignment: .right, location: location)]
         let grey: [NSAttributedString.Key: Any] = [.font: font, .paragraphStyle: style, .foregroundColor: NSColor.disabledControlTextColor]
         for row in rows {
-            row.item.attributedTitle = NSAttributedString(string: "\(row.label)\t\(row.value)", attributes: grey)
+            let title = NSMutableAttributedString(string: "\(row.label)\t", attributes: grey)
+            title.append(NSAttributedString(
+                string: row.value,
+                attributes: row.item.isEnabled ? [.font: font, .paragraphStyle: style] : grey
+            ))
+            row.item.attributedTitle = title
         }
     }
 
@@ -234,6 +248,11 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         NSApp.activate()
         guard alert.runModal() == .alertFirstButtonReturn else { return }
         connection.setDualDevice(!on)
+    }
+
+    /// For an untested model: the project's page, where people can report whether it works.
+    @objc private func helpSupport() {
+        NSWorkspace.shared.open(URL(string: "https://github.com/jfexyz/1MAS")!)
     }
 
     @objc private func toggleLaunchAtLogin() {
