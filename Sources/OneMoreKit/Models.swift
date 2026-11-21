@@ -11,14 +11,19 @@ public struct ModelInfo: Equatable, Hashable, Sendable {
     public var listenModes: [ListenMode]
     /// The EQ presets the model offers, by ID (`EQPreset.names`), in the vendor app's order.
     public var eqPresets: [UInt8]
+    /// Whether the model has dual device connection (`77` read, `76` write).
+    public var dualDevice: Bool
 
     public static let sonoFlow = ModelInfo(
         bluetoothName: "1MORE SonoFlow",
         model: "HC905",
         kind: .headphones,
         listenModes: [.off, .strongANC, .transparent],
-        // Studio to Loud. Custom (0x0C) selects the custom curve, which is not editable here yet.
-        eqPresets: Array(0x00...0x0B)
+        // Studio to Vocal Booster. Custom (0x0C) selects the custom curve, which is not editable
+        // here yet.
+        eqPresets: Array(0x00...0x0B),
+        // PairFree's data says no, but firmware 1.0.5 has it and the vendor app shows it.
+        dualDevice: true
     )
 
     public static let known: [ModelInfo] = [.sonoFlow]

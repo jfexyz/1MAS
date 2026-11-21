@@ -16,6 +16,7 @@ public enum SessionError: Error, Equatable, CustomStringConvertible {
     case forbidden(command: UInt16)
     case unsupported(ListenMode)
     case unsupportedEQPreset(UInt8)
+    case unsupportedSetting(command: UInt16)
     case rejected(command: UInt16, result: [UInt8])
 
     public var description: String {
@@ -25,6 +26,7 @@ public enum SessionError: Error, Equatable, CustomStringConvertible {
         case .forbidden(let command): "Command \(hex16(command)) is forbidden"
         case .unsupported(let mode): "This model does not support \(mode.label)"
         case .unsupportedEQPreset(let id): "This model does not have the \(EQPreset.name(id)) preset"
+        case .unsupportedSetting(let command): "This model does not support command \(hex16(command))"
         case .rejected(let command, let result): "The headphones rejected \(hex16(command)): \(result.hex)"
         }
     }
@@ -40,6 +42,7 @@ public struct DeviceState: Equatable, Sendable {
     /// Raw listen-mode value; may be one `ListenMode` does not name.
     public var listenModeValue: UInt8?
     public var eqPreset: UInt8?
+    public var dualDevice: Bool?
 
     public init() {}
 
@@ -98,6 +101,9 @@ public final class Session {
         _ = try await request(Command.deviceInfo.rawValue)
         _ = try await request(Command.getListenMode.rawValue)
         _ = try await request(Command.getEQPreset.rawValue)
+        if model.dualDevice {
+            _ = try await request(Command.getDualDevice.rawValue)
+        }
     }
 
     public func refreshBattery() async throws {
@@ -116,13 +122,25 @@ public final class Session {
         try await write(.setEQPreset, id, readBack: .getEQPreset)
     }
 
+    /// Turns dual device connection on or off. The headphones acknowledge the write, then restart
+    /// to apply it (on the SonoFlow they drop off about 3 s later and are back after about 11 s),
+    /// so this does not read the setting back: `state` takes the written value, and the session
+    /// closes when they restart. The next session's `refresh()` reads it again.
+    public func setDualDevice(_ on: Bool) async throws {
+        guard model.dualDevice else { throw SessionError.unsupportedSetting(command: Command.setDualDevice.rawValue) }
+        try await write(.setDualDevice, on ? 1 : 0, readBack: nil)
+        state.dualDevice = on
+    }
+
     /// Sends a one-byte write, checks its one-byte result, and reads the setting back.
-    private func write(_ command: Command, _ value: UInt8, readBack: Command) async throws {
+    private func write(_ command: Command, _ value: UInt8, readBack: Command?) async throws {
         let reply = try await request(command.rawValue, payload: [value])
         guard reply.payload.first == WriteResult.success.rawValue else {
             throw SessionError.rejected(command: reply.command, result: reply.payload)
         }
-        _ = try await request(readBack.rawValue)
+        if let readBack {
+            _ = try await request(readBack.rawValue)
+        }
     }
 
     public func close() {
@@ -187,6 +205,8 @@ public final class Session {
             if let value = frame.payload.first { state.listenModeValue = value }
         case .getEQPreset:
             if let value = frame.payload.first { state.eqPreset = value }
+        case .getDualDevice:
+            if let value = frame.payload.first { state.dualDevice = value != 0 }
         default:
             break
         }

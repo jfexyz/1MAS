@@ -5,9 +5,9 @@ battery. Built first for the SonoFlow (HC905); other 1MORE models share the prot
 through a per-model capability table.
 
 Status: works on a SonoFlow (firmware 1.0.5). A menu bar app shows battery, model, and firmware,
-switches between off, noise cancellation, and transparency, and chooses the EQ preset; the `onemore`
-command-line tool does the same for probing. `docs/HARDWARE.md` records what has been verified on
-hardware.
+switches between off, noise cancellation, and transparency, chooses the EQ preset, and turns dual
+device connection on or off (which restarts the headphones); the `onemore` command-line tool does
+the same for probing. `docs/HARDWARE.md` records what has been verified on hardware.
 
 ## Layout
 

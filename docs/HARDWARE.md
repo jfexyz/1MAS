@@ -70,5 +70,21 @@ flag, then gain, frequency, and Q, two bytes each.
   did not show up in it, so how they apply is still open.
 - The flag was `01` on the first nine records and `02` on the last.
 
-**Not yet tested:** custom EQ writes (`53`), dual device (`76`/`77`), connection mode (`6B`/`6C`),
-and behaviour with a phone also connected.
+**Dual device connection** (2026-11-21). PairFree's model data says the SonoFlow lacks it, but the
+vendor's iPhone app offers it and the headphones answer `77`: `00` while off, `01` after the phone
+app turned it on. Changing it **restarts the headphones**, from either app:
+
+| Time  | Event                                                              |
+| ----- | ------------------------------------------------------------------ |
+| 0 s   | `76 00` sent (`11 01 00 76 00 01 00 01 66 00`); reply `01` at once |
+| ~3 s  | the headphones drop off Bluetooth                                  |
+| ~11 s | they are connected to the Mac again; `77` reads `00`               |
+| 0 s   | `76 01` sent; reply `01`, the same sequence                        |
+| ~12 s | connected again; `77` reads `01`                                   |
+
+The setting survives the restart, and turning it on left the other settings (listen mode, EQ preset,
+connection mode `6C` = `00`) as they were. Once the phone app was closed, the Mac opened the control
+channel as usual.
+
+**Not yet tested:** custom EQ writes (`53`), connection mode writes (`6B`), and using the control
+channel while the phone app is open.

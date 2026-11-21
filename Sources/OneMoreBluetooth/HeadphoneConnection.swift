@@ -88,6 +88,11 @@ public final class HeadphoneConnection {
         perform { try await $0.setEQPreset(id) }
     }
 
+    /// The headphones restart after this; the usual reconnection brings them back.
+    public func setDualDevice(_ on: Bool) {
+        perform { try await $0.setDualDevice(on) }
+    }
+
     /// Runs a change on the open session, if any, recording its failure in `lastError`.
     private func perform(_ change: @escaping @MainActor (Session) async throws -> Void) {
         guard let session else { return }

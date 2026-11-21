@@ -100,6 +100,14 @@ final class StatusMenu: NSObject, NSMenuDelegate {
                 }
             }
 
+            if session.model.dualDevice, let on = session.state.dualDevice {
+                menu.addItem(.separator())
+                let item = NSMenuItem(title: "Dual Device Connection", action: #selector(toggleDualDevice), keyEquivalent: "")
+                item.target = self
+                item.state = on ? .on : .off
+                menu.addItem(item)
+            }
+
             menu.addItem(.separator())
             addAligned("Model", session.model.model)
             if let firmware = session.state.info?.firmware(for: session.model) {
@@ -182,6 +190,20 @@ final class StatusMenu: NSObject, NSMenuDelegate {
 
     @objc private func selectEQPreset(_ sender: NSMenuItem) {
         connection.setEQPreset(UInt8(sender.tag))
+    }
+
+    /// Asks first, since the headphones restart to apply the change.
+    @objc private func toggleDualDevice() {
+        guard let on = connection.session?.state.dualDevice else { return }
+        let alert = NSAlert()
+        alert.messageText = on ? "Turn off Dual Device Connection?" : "Turn on Dual Device Connection?"
+        alert.informativeText = "Changing this setting restarts the headphones. Audio will stop playing until they reconnect."
+        alert.addButton(withTitle: "Restart")
+        alert.addButton(withTitle: "Cancel")
+        // A menu bar app is not frontmost, and the alert would open behind other windows.
+        NSApp.activate()
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        connection.setDualDevice(!on)
     }
 
     @objc private func toggleLaunchAtLogin() {

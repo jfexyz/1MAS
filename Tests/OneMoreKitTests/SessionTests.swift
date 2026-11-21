@@ -37,6 +37,7 @@ struct SessionTests {
             case 0x4E: [reply(to: request, [UInt8](hex: "00 01 00 05 46 00 00 00 00 00")!)]
             case 0x5F: [reply(to: request, [0x01])]
             case 0x6A: [reply(to: request, [0x00])]
+            case 0x77: [reply(to: request, [0x01])]
             default: []
             }
         }
@@ -47,7 +48,21 @@ struct SessionTests {
         #expect(session.state.info?.firmware(for: .sonoFlow) == "1.0.5")
         #expect(session.state.listenMode == .strongANC)
         #expect(session.state.eqPreset == 0)
-        #expect(transport.sent.map(\.sequence) == [0, 1, 2])
+        #expect(session.state.dualDevice == true)
+        #expect(transport.sent.map(\.sequence) == [0, 1, 2, 3])
+    }
+
+    @Test func setDualDeviceWritesWithoutReadingBack() async throws {
+        let transport = FakeTransport()
+        // The SonoFlow acknowledges, then restarts: nothing answers a read after that.
+        transport.responder = { request in request.command == 0x76 ? [reply(to: request, [0x01])] : [] }
+        let session = Session(transport: transport, model: .sonoFlow)
+
+        try await session.setDualDevice(false)
+
+        #expect(session.state.dualDevice == false)
+        // As recorded from the SonoFlow, with the sequence numbers this session used.
+        #expect(transport.sent.map(\.bytes.hex) == ["11 01 00 76 00 01 00 00 67 00"])
     }
 
     @Test func setListenModeHandlesThePushThatArrivesBeforeTheReply() async throws {
