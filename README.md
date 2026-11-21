@@ -9,6 +9,8 @@ switches between off, noise cancellation, and transparency, chooses the EQ prese
 device connection on or off (which restarts the headphones); the `onemore` command-line tool does
 the same for probing. `docs/HARDWARE.md` records what has been verified on hardware.
 
+Requires macOS 14 (Sonoma) or later; so far tested only on macOS 27.
+
 ## Layout
 
 | Path                       | What it is                                                                                                                                           |
