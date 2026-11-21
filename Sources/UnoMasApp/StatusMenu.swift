@@ -65,8 +65,8 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         menu.removeAllItems()
         // Label-and-value rows. Their titles are set last, once the menu's width is known.
         var aligned: [(item: NSMenuItem, label: String, value: String)] = []
-        func addAligned(_ label: String, _ value: String, item: NSMenuItem? = nil) {
-            let item = item ?? info("")
+        func addAligned(_ label: String, _ value: String) {
+            let item = info("")
             menu.addItem(item)
             aligned.append((item, label, value))
         }
@@ -138,13 +138,15 @@ final class StatusMenu: NSObject, NSMenuDelegate {
 
             menu.addItem(.separator())
             addAligned("Model", session.model.model)
-            if !session.model.verified {
-                let item = NSMenuItem(title: "", action: #selector(helpSupport), keyEquivalent: "")
-                item.target = self
-                addAligned("Untested Model", "Help Support", item: item)
-            }
             if let firmware = session.state.info?.firmware(for: session.model) {
                 addAligned("Firmware", firmware)
+            }
+            // The ellipsis, as macOS menus mark an item that asks for more before it is done: it
+            // opens a prefilled report in the browser.
+            if !session.model.verified {
+                let item = NSMenuItem(title: "Help Us Support This Model…", action: #selector(helpSupport), keyEquivalent: "")
+                item.target = self
+                menu.addItem(item)
             }
         }
 
@@ -176,9 +178,8 @@ final class StatusMenu: NSObject, NSMenuDelegate {
     }
 
     /// Titles each row `label`, then `value` right-aligned with a tab stop at the widest title in
-    /// the menu, which is the menu's right edge as long as no item has a key equivalent. The label
-    /// is drawn in the disabled items' grey, and so is the value unless the item can be clicked,
-    /// when the value names the action (Help Support). A highlighted item is drawn in white.
+    /// the menu, which is the menu's right edge as long as no item has a key equivalent. Both are
+    /// drawn in the disabled items' grey, since these rows are information only.
     private func alignValues(_ rows: [(item: NSMenuItem, label: String, value: String)]) {
         let font = NSFont.menuFont(ofSize: 0)
         func width(_ text: String) -> CGFloat {
@@ -191,12 +192,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         style.tabStops = [NSTextTab(textAlignment: .right, location: location)]
         let grey: [NSAttributedString.Key: Any] = [.font: font, .paragraphStyle: style, .foregroundColor: NSColor.disabledControlTextColor]
         for row in rows {
-            let title = NSMutableAttributedString(string: "\(row.label)\t", attributes: grey)
-            title.append(NSAttributedString(
-                string: row.value,
-                attributes: row.item.isEnabled ? [.font: font, .paragraphStyle: style] : grey
-            ))
-            row.item.attributedTitle = title
+            row.item.attributedTitle = NSAttributedString(string: "\(row.label)\t\(row.value)", attributes: grey)
         }
     }
 
@@ -250,9 +246,10 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         connection.setDualDevice(!on)
     }
 
-    /// For an untested model: the project's page, where people can report whether it works.
+    /// For an untested model: a new device support issue, filled in with what the app knows.
     @objc private func helpSupport() {
-        NSWorkspace.shared.open(URL(string: "https://github.com/jfexyz/1MAS")!)
+        guard let session = connection.session else { return }
+        NSWorkspace.shared.open(SupportReport.url(session: session, bluetoothName: connection.status.name ?? ""))
     }
 
     @objc private func toggleLaunchAtLogin() {

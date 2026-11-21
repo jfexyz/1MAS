@@ -107,7 +107,8 @@ Only the SonoFlow has been tried on real headphones. What the others can do come
 [PairFree's model data](https://github.com/Omega-Destroyer/PairFree/blob/main/data/1more/devices.json),
 which PairFree took from 1MORE's own product list and decompiled apps, not from hardware.
 `scripts/import-models.swift` turns it into the app's model table. With an untested model connected,
-the menu shows **Untested Model**; its **Help Support** link leads here, where an issue saying
+the menu shows **Help Us Support This Model…**, which opens a device support issue in the browser,
+already filled in with the model, firmware, versions, and what the headphones answered. Saying
 whether it works, or what does not, is very welcome.
 
 - ✅ Works in 1MAS, verified on the hardware.

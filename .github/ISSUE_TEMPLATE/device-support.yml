@@ -1,0 +1,86 @@
+name: Device support
+description: Tell us whether 1MAS works with your 1MORE headphones or earbuds
+title: "Device support: "
+labels: ["device-support"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping! Most 1MORE models have never been tested with 1MAS, so every report helps, whether everything works or nothing does.
+
+        **Help Us Support This Model…** in the 1MAS menu opens this form with the details below already filled in. If you came here another way, fill in what you can.
+
+  - type: dropdown
+    id: result
+    attributes:
+      label: Does it work?
+      options:
+        - Everything I tried works
+        - Some things work
+        - Nothing works
+        - It does not connect
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: worked
+    attributes:
+      label: What worked
+      description: Tick what you tried and saw work.
+      options:
+        - label: The battery level is right
+        - label: Noise control changes the headphones' mode
+        - label: The menu shows the mode I set with the buttons on the headphones or the 1MORE app
+        - label: EQ presets change the sound
+        - label: Allow Multiple Connections turns dual device connection on or off
+        - label: Use for macOS Sound Output switches the Mac's sound to the headphones
+
+  - type: textarea
+    id: problems
+    attributes:
+      label: What did not work, or looked wrong
+      description: Wrong battery, missing modes or presets, error messages, anything odd.
+
+  - type: input
+    id: model
+    attributes:
+      label: Model number
+      description: As on the box or in the 1MORE app, such as `HC905`.
+
+  - type: input
+    id: bluetooth-name
+    attributes:
+      label: Bluetooth name
+      description: As shown in System Settings → Bluetooth, such as "1MORE SonoFlow".
+    validations:
+      required: true
+
+  - type: input
+    id: firmware
+    attributes:
+      label: Firmware version
+      description: Shown in the 1MAS menu or in the 1MORE app.
+
+  - type: textarea
+    id: replies
+    attributes:
+      label: What the headphones answered
+      description:
+        Filled in by 1MAS. Without it, run `unomas probe` in Terminal.app and paste the output here if you can, or leave it empty.
+      render: text
+
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+
+  - type: input
+    id: mac
+    attributes:
+      label: Mac model
+      description: Filled in by 1MAS, such as `Mac15,12`.
+
+  - type: input
+    id: app-version
+    attributes:
+      label: 1MAS version

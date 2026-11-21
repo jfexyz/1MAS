@@ -62,6 +62,8 @@ public final class Session {
     public let model: ModelInfo
     public private(set) var state = DeviceState()
     public private(set) var isClosed = false
+    /// The latest reply payload to each command, raw, for support reports.
+    @ObservationIgnored public private(set) var replies: [UInt16: [UInt8]] = [:]
 
     /// Called with every frame sent (`outgoing == true`) and received, for logging.
     @ObservationIgnored public var frameObserver: ((Frame, _ outgoing: Bool) -> Void)?
@@ -205,6 +207,7 @@ public final class Session {
     private func receive(_ bytes: [UInt8]) {
         for frame in parser.feed(bytes) {
             frameObserver?(frame, false)
+            if frame.isResponse { replies[frame.command] = frame.payload }
             apply(frame)
             if frame.isResponse, let match = pending.first(where: { $0.command == frame.command }) {
                 resolve(match.id, with: .success(frame))
