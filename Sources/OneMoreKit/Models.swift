@@ -28,7 +28,8 @@ public extension ListenMode {
     var label: String {
         switch self {
         case .off: "Off"
-        case .strongANC: "Noise Cancelling"
+        // Starts with "A" to match the menu bar icon's letter.
+        case .strongANC: "Active Noise Cancelling"
         case .mildANC: "Mild Noise Cancelling"
         case .transparent: "Transparency"
         case .windReduction: "Wind Reduction"

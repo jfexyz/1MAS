@@ -16,17 +16,11 @@ struct OneMoreMacApp: App {
         MenuBarExtra {
             MenuContent(connection: connection)
         } label: {
-            Image(systemName: menuBarSymbol)
+            Image(nsImage: MenuBarIcon.image(
+                mode: connection.session?.state.listenMode,
+                connected: connection.session != nil
+            ))
         }
         .menuBarExtraStyle(.menu)
-    }
-
-    /// The icon follows the listen mode, so the current mode is visible without opening the menu.
-    private var menuBarSymbol: String {
-        switch connection.session?.state.listenMode {
-        case .strongANC, .mildANC, .adaptiveANC, .windReduction: "headphones.circle.fill"
-        case .transparent, .passThrough, .voiceEnhancement: "ear"
-        case .off, nil: "headphones"
-        }
     }
 }

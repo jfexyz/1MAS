@@ -29,10 +29,12 @@ scripts/build-app.sh && open build/1more-mac.app
 $(swift build --show-bin-path)/onemore --help
 ```
 
-The app is a menu bar item only (no Dock icon). Its menu has a Launch at Login toggle, which
-registers the app where it is, so move it to `/Applications` first if you want that. On first launch
-macOS asks for Bluetooth permission. The app is ad-hoc signed by default, so a rebuild may ask
-again; `SIGN_IDENTITY` in `scripts/build-app.sh` avoids that.
+The app is a menu bar item only (no Dock icon). The icon is the headphones with a letter for the
+current mode: **A** for active noise cancelling, **T** for transparency, **O** for off. It is dimmed
+when no headphones are connected. Its menu has a Launch at Login toggle, which registers the app
+where it is, so move it to `/Applications` first if you want that. On first launch macOS asks for
+Bluetooth permission. The app is ad-hoc signed by default, so a rebuild may ask again;
+`SIGN_IDENTITY` in `scripts/build-app.sh` avoids that.
 
 **Only one program can hold the headphones' control channel.** While the app is connected, the
 `onemore` CLI and the vendor app on a phone cannot reach the headphones. Quit the app to use them.
