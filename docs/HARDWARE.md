@@ -86,5 +86,8 @@ The setting survives the restart, and turning it on left the other settings (lis
 connection mode `6C` = `00`) as they were. Once the phone app was closed, the Mac opened the control
 channel as usual.
 
+Turning it off from the menu bar app worked end to end: the confirmation, the restart, and the app's
+own reconnection, after which the menu showed it off.
+
 **Not yet tested:** custom EQ writes (`53`), connection mode writes (`6B`), and using the control
 channel while the phone app is open.
