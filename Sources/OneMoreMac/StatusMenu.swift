@@ -204,7 +204,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         guard let on = connection.session?.state.dualDevice else { return }
         let alert = NSAlert()
         alert.messageText = on ? "Disable Dual Device Connection?" : "Enable Dual Device Connection?"
-        alert.informativeText = "Changing this setting restarts the headphones. Audio will stop playing until they reconnect."
+        alert.informativeText = "Changing this setting restarts the headphones. Audio will stop playing, and you may need to resume it once they reconnect."
         // Named for the change, not "Restart", which could read as restarting the Mac.
         alert.addButton(withTitle: on ? "Disable" : "Enable")
         alert.addButton(withTitle: "Cancel")
