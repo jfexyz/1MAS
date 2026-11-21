@@ -1,7 +1,7 @@
 import Foundation
 import IOBluetooth
 import Observation
-import OneMoreKit
+import UnoMasKit
 
 /// Keeps a `Session` open to whichever known 1MORE device is connected to this Mac.
 ///

@@ -1,9 +1,9 @@
 import AppKit
-import OneMoreBluetooth
+import UnoMasBluetooth
 
 /// A menu bar-only app (`LSUIElement` in its `Info.plist`): one status item, no windows.
 @main
-enum OneMoreMacApp {
+enum UnoMasApp {
     @MainActor static func main() {
         let connection = HeadphoneConnection()
         let menu = StatusMenu(connection: connection)

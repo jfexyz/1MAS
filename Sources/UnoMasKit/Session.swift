@@ -1,6 +1,6 @@
 import Observation
 
-/// A byte pipe to one device. The Bluetooth implementation lives in `OneMoreBluetooth`; tests use a
+/// A byte pipe to one device. The Bluetooth implementation lives in `UnoMasBluetooth`; tests use a
 /// fake. Everything runs on the main actor, where IOBluetooth delivers its callbacks.
 @MainActor
 public protocol ByteTransport: AnyObject {

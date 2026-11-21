@@ -1,5 +1,5 @@
 import Testing
-@testable import OneMoreKit
+@testable import UnoMasKit
 
 /// Fixtures are real packets from the three public sources, so these tests pin our framing to
 /// what the hardware and the vendor app actually exchange.

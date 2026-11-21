@@ -1,10 +1,10 @@
-# 1MORE for macOS
+# 1MAS
 
 A macOS controller for various [1MORE headphones](https://usa.1more.com).
 
 The menu bar app displays current battery charge, lists model and firmware numbers, switches between
 noise control modes (off/active noise cancellation/transparency), chooses equalizer presets, and
-enables/disables dual device connection. The `onemore` command-line tool does the same for probing.
+enables/disables dual device connection. The `unomas` command-line tool does the same for probing.
 
 **This app is not affiliated with nor endorsed by 1MORE.**
 
@@ -18,16 +18,16 @@ Requires macOS 14 (Sonoma) or later; so far tested only on macOS 27.
 
 ## Layout
 
-| Path                       | What it is                                                                                                                                           |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Sources/OneMoreKit`       | The protocol: framing, commands, decoders, the model table, and `Session` (request/response and device state over any byte transport). No Bluetooth. |
-| `Sources/OneMoreBluetooth` | IOBluetooth: finding devices and their serial channel, `RFCOMMTransport`, and `HeadphoneConnection`, which connects and reconnects automatically.    |
-| `Sources/OneMoreMac`       | The menu bar app, in AppKit (`NSStatusItem` and `NSMenu`).                                                                                           |
-| `Sources/onemore`          | `onemore`, a CLI for probing the headphones.                                                                                                         |
-| `Support/OneMoreMac`       | The app's `Info.plist` and icon.                                                                                                                     |
-| `scripts/build-app.sh`     | Builds and signs `build/1more.app`.                                                                                                                  |
-| `scripts/make-icon.swift`  | Writes the app icon, `AppIcon.icon`, for Icon Composer. Its header says how to run it.                                                               |
-| `Tests/OneMoreKitTests`    | Unit tests, pinned to real packets from the public sources and the hardware.                                                                         |
+| Path                      | What it is                                                                                                                                           |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Sources/UnoMasKit`       | The protocol: framing, commands, decoders, the model table, and `Session` (request/response and device state over any byte transport). No Bluetooth. |
+| `Sources/UnoMasBluetooth` | IOBluetooth: finding devices and their serial channel, `RFCOMMTransport`, and `HeadphoneConnection`, which connects and reconnects automatically.    |
+| `Sources/UnoMasApp`       | The menu bar app, in AppKit (`NSStatusItem` and `NSMenu`).                                                                                           |
+| `Sources/unomas`          | `unomas`, a CLI for probing the headphones.                                                                                                          |
+| `Support/UnoMasApp`       | The app's `Info.plist` and icon.                                                                                                                     |
+| `scripts/build-app.sh`    | Builds and signs `build/1MAS.app`.                                                                                                                   |
+| `scripts/make-icon.swift` | Writes the app icon, `AppIcon.icon`, for Icon Composer. Its header says how to run it.                                                               |
+| `Tests/UnoMasKitTests`    | Unit tests, pinned to real packets from the public sources and the hardware.                                                                         |
 
 ## Installing
 
@@ -46,11 +46,11 @@ opens an app built on the same Mac without complaint.
 **Build and install:**
 
 ```sh
-git clone https://github.com/jfexyz/1more-for-mac.git
-cd 1more-for-mac
+git clone https://github.com/jfexyz/1MAS.git
+cd 1MAS
 scripts/build-app.sh
-mv build/1more.app /Applications/
-open /Applications/1more.app
+mv build/1MAS.app /Applications/
+open /Applications/1MAS.app
 ```
 
 If the build warns that it could not compile the app icon although Xcode 26 or later is installed,
@@ -67,11 +67,11 @@ bar, not the Dock. To start it whenever you log in, turn on Launch at Login in i
 **Updating:** quit the app from its menu, then:
 
 ```sh
-cd 1more-for-mac
+cd 1MAS
 git pull
 scripts/build-app.sh
-rm -rf /Applications/1more.app && mv build/1more.app /Applications/
-open /Applications/1more.app
+rm -rf /Applications/1MAS.app && mv build/1MAS.app /Applications/
+open /Applications/1MAS.app
 ```
 
 macOS may ask for Bluetooth permission again after an update, since each build is signed afresh (see
@@ -85,7 +85,7 @@ The menu shows the battery, switches noise control and the EQ preset, turns dual
 on or off, and shows the model and firmware.
 
 **Only one program can hold the headphones' control channel.** While the app is connected, the
-vendor's phone app and the `onemore` CLI cannot reach the headphones; quit the app to use them. If
+vendor's phone app and the `unomas` CLI cannot reach the headphones; quit the app to use them. If
 the app shows "Another app might have control", close the phone app.
 
 ## Development
@@ -93,15 +93,15 @@ the app shows "Another app might have control", close the phone app.
 ```sh
 swift build
 swift test
-scripts/build-app.sh && open build/1more.app
-$(swift build --show-bin-path)/onemore --help
+scripts/build-app.sh && open build/1MAS.app
+$(swift build --show-bin-path)/unomas --help
 ```
 
 `scripts/build-app.sh` signs the app ad hoc, which gives every build a new code identity, so macOS
 may ask for Bluetooth permission again after a rebuild. Signing with a stable identity avoids that:
 `SIGN_IDENTITY="Apple Development: …" scripts/build-app.sh`.
 
-`onemore` embeds an `Info.plist` with a Bluetooth usage description (see `Package.swift`), so macOS
+`unomas` embeds an `Info.plist` with a Bluetooth usage description (see `Package.swift`), so macOS
 can ask for Bluetooth permission. The permission is granted to the app that launches it, normally
 your terminal.
 
@@ -118,10 +118,10 @@ SonoFlow that record is named `Spp1`. Frames are big-endian:
 head(2) | command(2) | length(2) | sequence(2) | xor of the 8 header bytes(1) | payload
 ```
 
-Requests start `11 01`, replies `01`. `Sources/OneMoreKit/Command.swift` lists the commands.
+Requests start `11 01`, replies `01`. `Sources/UnoMasKit/Command.swift` lists the commands.
 
 **Safety.** The SonoFlow also exposes an `OTA1` firmware-update service over RFCOMM. Nothing here
-opens a record whose name contains `OTA`, and `OneMoreKit` refuses the firmware-update and "delete
+opens a record whose name contains `OTA`, and `UnoMasKit` refuses the firmware-update and "delete
 music" commands (`49`, `4F`, `71`–`73`) whatever the caller asks. Note that IOBluetooth's own
 `getServiceRecord(for: 0x1101)` returns the `OTA1` record on this device, which is why
 `DeviceDirectory` matches the service class itself.

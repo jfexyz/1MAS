@@ -7,7 +7,7 @@ section per model and firmware.
 
 macOS 27.2 on Apple Silicon, headphones connected to the Mac and playing audio, no phone connected.
 
-**SDP records** (`onemore sdp --refresh`):
+**SDP records** (`unomas sdp --refresh`):
 
 | Name           | RFCOMM | Service class                          |
 | -------------- | ------ | -------------------------------------- |

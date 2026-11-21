@@ -1,5 +1,5 @@
 import Testing
-@testable import OneMoreKit
+@testable import UnoMasKit
 
 /// Stands in for the Bluetooth channel: records what is sent and lets a test inject replies.
 @MainActor

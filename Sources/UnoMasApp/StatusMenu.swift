@@ -1,6 +1,6 @@
 import AppKit
-import OneMoreBluetooth
-import OneMoreKit
+import UnoMasBluetooth
+import UnoMasKit
 import ServiceManagement
 
 /// The menu bar item and its menu, in AppKit rather than SwiftUI's `MenuBarExtra`: an `NSMenu`
@@ -175,7 +175,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
     }
 
     /// The control channel allows only one client, so another one holding it (the vendor's phone
-    /// app, or the `onemore` CLI) is the usual cause of a failure. The hint about that is shown
+    /// app, or the `unomas` CLI) is the usual cause of a failure. The hint about that is shown
     /// for the failures it can explain, with the specific cause below it except for a timeout,
     /// which is how an occupied channel shows up.
     private static func explanation(of failure: HeadphoneConnection.ConnectFailure) -> [String] {

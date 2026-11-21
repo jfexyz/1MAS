@@ -1,6 +1,6 @@
 import Foundation
 import IOBluetooth
-import OneMoreKit
+import UnoMasKit
 
 public enum BluetoothError: Error, CustomStringConvertible {
     case noSerialService

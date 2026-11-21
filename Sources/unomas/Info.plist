@@ -3,10 +3,10 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleIdentifier</key>
-	<string>local.onemore-for-mac.cli</string>
+	<string>local.unomas.cli</string>
 	<key>CFBundleName</key>
-	<string>onemore</string>
+	<string>unomas</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>onemore talks to your 1MORE headphones over Bluetooth to read battery and change noise control.</string>
+	<string>unomas talks to your 1MORE headphones over Bluetooth to read battery and change noise control.</string>
 </dict>
 </plist>

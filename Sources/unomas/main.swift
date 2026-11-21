@@ -1,10 +1,10 @@
 import Foundation
 import IOBluetooth
-import OneMoreBluetooth
-import OneMoreKit
+import UnoMasBluetooth
+import UnoMasKit
 
 let usage = """
-    usage: onemore [--device NAME|ADDRESS] [--channel N] [--no-handshake] [-v] <command>
+    usage: unomas[--device NAME|ADDRESS] [--channel N] [--no-handshake] [-v] <command>
 
     commands:
       devices                 list paired devices whose name contains --device (default "1MORE")
@@ -49,7 +49,7 @@ func parseOptions() -> Options {
 }
 
 func fail(_ message: String) -> Never {
-    FileHandle.standardError.write(Data("onemore: \(message)\n".utf8))
+    FileHandle.standardError.write(Data("unomas: \(message)\n".utf8))
     exit(1)
 }
 

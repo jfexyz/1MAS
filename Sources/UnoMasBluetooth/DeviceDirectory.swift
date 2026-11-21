@@ -1,6 +1,6 @@
 import Foundation
 import IOBluetooth
-import OneMoreKit
+import UnoMasKit
 
 /// Finding devices and their channels.
 public enum DeviceDirectory {

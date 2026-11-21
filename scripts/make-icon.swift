@@ -1,4 +1,4 @@
-// Writes the app icon as an Icon Composer document, Support/OneMoreMac/AppIcon.icon.
+// Writes the app icon as an Icon Composer document, Support/UnoMasApp/AppIcon.icon.
 //
 //   curl -o /tmp/1more-logo.png 'https://usa.1more.com/cdn/shop/files/logo_pc.png'
 //   swift scripts/make-icon.swift /tmp/1more-logo.png
@@ -17,7 +17,7 @@ guard arguments.count >= 2 else {
     exit(2)
 }
 let logoPath = arguments[1]
-let output = URL(fileURLWithPath: arguments.count > 2 ? arguments[2] : "Support/OneMoreMac/AppIcon.icon")
+let output = URL(fileURLWithPath: arguments.count > 2 ? arguments[2] : "Support/UnoMasApp/AppIcon.icon")
 
 /// A colour as icon.json writes it.
 func srgb(_ hex: UInt32) -> String {
