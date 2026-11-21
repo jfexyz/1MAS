@@ -81,10 +81,19 @@ public final class HeadphoneConnection {
     }
 
     public func setListenMode(_ mode: ListenMode) {
+        perform { try await $0.setListenMode(mode) }
+    }
+
+    public func setEQPreset(_ id: UInt8) {
+        perform { try await $0.setEQPreset(id) }
+    }
+
+    /// Runs a change on the open session, if any, recording its failure in `lastError`.
+    private func perform(_ change: @escaping @MainActor (Session) async throws -> Void) {
         guard let session else { return }
         Task {
             do {
-                try await session.setListenMode(mode)
+                try await change(session)
                 lastError = nil
             } catch {
                 lastError = "\(error)"

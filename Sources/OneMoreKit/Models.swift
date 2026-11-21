@@ -9,12 +9,16 @@ public struct ModelInfo: Equatable, Hashable, Sendable {
     public var model: String
     public var kind: Kind
     public var listenModes: [ListenMode]
+    /// The EQ presets the model offers, by ID (`EQPreset.names`), in the vendor app's order.
+    public var eqPresets: [UInt8]
 
     public static let sonoFlow = ModelInfo(
         bluetoothName: "1MORE SonoFlow",
         model: "HC905",
         kind: .headphones,
-        listenModes: [.off, .strongANC, .transparent]
+        listenModes: [.off, .strongANC, .transparent],
+        // Studio to Loud. Custom (0x0C) selects the custom curve, which is not editable here yet.
+        eqPresets: Array(0x00...0x0B)
     )
 
     public static let known: [ModelInfo] = [.sonoFlow]
@@ -40,8 +44,7 @@ public extension ListenMode {
     }
 }
 
-/// EQ preset names by ID, as the vendor app lists them (PairFree's decompilation). Read-only for
-/// now: preset writes are not yet verified on hardware.
+/// EQ preset names by ID, as the vendor app lists them (PairFree's decompilation).
 public enum EQPreset {
     public static let names: [UInt8: String] = [
         0x00: "Studio", 0x01: "Bass Reducer", 0x02: "Bass Booster", 0x03: "Acoustic",

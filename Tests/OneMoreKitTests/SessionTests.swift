@@ -75,6 +75,27 @@ struct SessionTests {
         #expect(transport.sent.map(\.command) == [0x5E, 0x5F])
     }
 
+    @Test func setEQPresetWritesAndReadsBack() async throws {
+        let transport = FakeTransport()
+        var preset: UInt8 = 0
+        transport.responder = { request in
+            switch request.command {
+            case 0x69:
+                preset = request.payload[0]
+                return [reply(to: request, [0x01])]
+            case 0x6A: return [reply(to: request, [preset])]
+            default: return []
+            }
+        }
+        let session = Session(transport: transport, model: .sonoFlow)
+
+        try await session.setEQPreset(0x0A)
+
+        #expect(session.state.eqPreset == 0x0A)
+        // As recorded from the SonoFlow, with the sequence numbers this session used.
+        #expect(transport.sent.map(\.bytes.hex) == ["11 01 00 69 00 01 00 00 78 0A", "11 01 00 6A 00 00 00 01 7B"])
+    }
+
     @Test func pushedModeChangeUpdatesState() {
         let transport = FakeTransport()
         let session = Session(transport: transport, model: .sonoFlow)
@@ -86,6 +107,9 @@ struct SessionTests {
         let session = Session(transport: FakeTransport(), model: .sonoFlow)
         await #expect(throws: SessionError.unsupported(.windReduction)) {
             try await session.setListenMode(.windReduction)
+        }
+        await #expect(throws: SessionError.unsupportedEQPreset(0x0D)) {
+            try await session.setEQPreset(0x0D)
         }
         await #expect(throws: SessionError.forbidden(command: 0x71)) {
             _ = try await session.request(0x71)

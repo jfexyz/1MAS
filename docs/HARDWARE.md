@@ -46,5 +46,24 @@ mode, which arrives _before_ the write's own reply. The app can rely on these to
 changes made from the headphones' button or another device. Not yet tested: whether the button
 itself triggers one.
 
-**Not yet tested:** EQ writes (`69`, `53`/`54`), dual device (`76`/`77`), connection mode
-(`6B`/`6C`), and behaviour with a phone also connected.
+**EQ presets** (2026-11-21). `69 0A` (Pop) replied `01`, `6A` then read `0A`; `69 00` put Studio
+back the same way. No unsolicited `6A` was seen after either write, so the app reads the preset back
+rather than waiting for a push.
+
+**Custom EQ read** (2026-11-21). `54`, sent as the vendor app does with the ten band frequencies as
+its payload (two bytes each, high first:
+`00 64 00 E5 02 AA 04 D0 0A 0A 0C 23 12 21 1A 5D 25 4E 38 A4`), replied with ten 7-byte records: a
+flag, then gain, frequency, and Q, two bytes each.
+
+| Hz    | 100 | 229 | 682 | 1232 | 2570 | 3107 | 4641 | 6749 | 9550 | 14500 |
+| ----- | --- | --- | --- | ---- | ---- | ---- | ---- | ---- | ---- | ----- |
+| Q/100 | 80  | 80  | 80  | 90   | 140  | 140  | 150  | 180  | 110  | 60    |
+
+- The frequencies and Qs match PairFree's SonoFlow entry.
+- Every band's raw gain was `04 B0` (1200), which is 0 dB on PairFree's scale. This curve had never
+  been edited. 1MORE Life's per-band offsets (PairFree's `offsets`, such as −800 on the first band)
+  did not show up in it, so how they apply is still open.
+- The flag was `01` on the first nine records and `02` on the last.
+
+**Not yet tested:** custom EQ writes (`53`), dual device (`76`/`77`), connection mode (`6B`/`6C`),
+and behaviour with a phone also connected.

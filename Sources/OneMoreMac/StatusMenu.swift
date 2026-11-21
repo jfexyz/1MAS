@@ -80,10 +80,27 @@ final class StatusMenu: NSObject, NSMenuDelegate {
                 menu.addItem(item)
             }
 
-            menu.addItem(.separator())
-            if let preset = session.state.eqPreset {
-                menu.addItem(info("EQ: \(EQPreset.name(preset))"))
+            if !session.model.eqPresets.isEmpty {
+                menu.addItem(.separator())
+                menu.addItem(.sectionHeader(title: "Equalizer"))
+                let preset = session.state.eqPreset
+                for id in session.model.eqPresets {
+                    let item = NSMenuItem(title: EQPreset.name(id), action: #selector(selectEQPreset(_:)), keyEquivalent: "")
+                    item.target = self
+                    item.tag = Int(id)
+                    item.state = id == preset ? .on : .off
+                    menu.addItem(item)
+                }
+                // A preset set elsewhere that this menu does not offer, such as Custom from the
+                // vendor app: shown checked so the menu still says what is active.
+                if let preset, !session.model.eqPresets.contains(preset) {
+                    let item = info(EQPreset.name(preset))
+                    item.state = .on
+                    menu.addItem(item)
+                }
             }
+
+            menu.addItem(.separator())
             addAligned("Model", session.model.model)
             if let firmware = session.state.info?.firmware(for: session.model) {
                 addAligned("Firmware", firmware)
@@ -161,6 +178,10 @@ final class StatusMenu: NSObject, NSMenuDelegate {
     @objc private func selectListenMode(_ sender: NSMenuItem) {
         guard let mode = ListenMode(rawValue: UInt8(sender.tag)) else { return }
         connection.setListenMode(mode)
+    }
+
+    @objc private func selectEQPreset(_ sender: NSMenuItem) {
+        connection.setEQPreset(UInt8(sender.tag))
     }
 
     @objc private func toggleLaunchAtLogin() {

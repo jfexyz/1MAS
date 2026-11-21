@@ -1,12 +1,13 @@
 # 1more-mac
 
-A macOS controller for 1MORE headphones: noise control (off / ANC / transparency), battery, and
-later EQ. Built first for the SonoFlow (HC905); other 1MORE models share the protocol and are
-planned through a per-model capability table.
+A macOS controller for 1MORE headphones: noise control (off / ANC / transparency), EQ presets, and
+battery. Built first for the SonoFlow (HC905); other 1MORE models share the protocol and are planned
+through a per-model capability table.
 
-Status: works on a SonoFlow (firmware 1.0.5). A menu bar app shows battery, EQ preset, and firmware,
-and switches between off, noise cancellation, and transparency; the `onemore` command-line tool does
-the same for probing. `docs/HARDWARE.md` records what has been verified on hardware.
+Status: works on a SonoFlow (firmware 1.0.5). A menu bar app shows battery, model, and firmware,
+switches between off, noise cancellation, and transparency, and chooses the EQ preset; the `onemore`
+command-line tool does the same for probing. `docs/HARDWARE.md` records what has been verified on
+hardware.
 
 ## Layout
 
@@ -80,8 +81,8 @@ music" commands (`49`, `4F`, `71`–`73`) whatever the caller asks. Note that IO
   download it. Updating would need the firmware's download location and the update protocol on the
   `OTA1` channel, both unknown, and a failed update can brick the headphones. Until then the OTA
   guards stay.
-- **EQ.** Preset writes (`69`) and the 10-band custom EQ (`53`/`54`) are documented by PairFree but
-  not yet verified on hardware.
+- **Custom EQ.** The 10-band curve (`54` read, `53` write; ±3 dB per band) reads correctly on the
+  SonoFlow, but writing it, and the menu's Custom preset, need an editor window first.
 - **More models**, added to `ModelInfo.known` as each is verified.
 
 ## License

@@ -15,6 +15,7 @@ public enum SessionError: Error, Equatable, CustomStringConvertible {
     case closed
     case forbidden(command: UInt16)
     case unsupported(ListenMode)
+    case unsupportedEQPreset(UInt8)
     case rejected(command: UInt16, result: [UInt8])
 
     public var description: String {
@@ -23,6 +24,7 @@ public enum SessionError: Error, Equatable, CustomStringConvertible {
         case .closed: "The connection to the headphones closed"
         case .forbidden(let command): "Command \(hex16(command)) is forbidden"
         case .unsupported(let mode): "This model does not support \(mode.label)"
+        case .unsupportedEQPreset(let id): "This model does not have the \(EQPreset.name(id)) preset"
         case .rejected(let command, let result): "The headphones rejected \(hex16(command)): \(result.hex)"
         }
     }
@@ -105,11 +107,22 @@ public final class Session {
     /// Sets the listen mode, then reads it back so `state` reflects what the device did.
     public func setListenMode(_ mode: ListenMode) async throws {
         guard model.listenModes.contains(mode) else { throw SessionError.unsupported(mode) }
-        let reply = try await request(Command.setListenMode.rawValue, payload: [mode.rawValue])
+        try await write(.setListenMode, mode.rawValue, readBack: .getListenMode)
+    }
+
+    /// Sets the EQ preset, then reads it back. Unlike a listen mode change, no push was seen.
+    public func setEQPreset(_ id: UInt8) async throws {
+        guard model.eqPresets.contains(id) else { throw SessionError.unsupportedEQPreset(id) }
+        try await write(.setEQPreset, id, readBack: .getEQPreset)
+    }
+
+    /// Sends a one-byte write, checks its one-byte result, and reads the setting back.
+    private func write(_ command: Command, _ value: UInt8, readBack: Command) async throws {
+        let reply = try await request(command.rawValue, payload: [value])
         guard reply.payload.first == WriteResult.success.rawValue else {
             throw SessionError.rejected(command: reply.command, result: reply.payload)
         }
-        _ = try await request(Command.getListenMode.rawValue)
+        _ = try await request(readBack.rawValue)
     }
 
     public func close() {
