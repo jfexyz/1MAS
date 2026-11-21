@@ -85,6 +85,12 @@ With Color Icon on Low Battery turned on in the menu, it turns orange at 20% bat
 menu shows the battery, switches noise control and the EQ preset, turns dual device connection on or
 off, and shows the model and firmware.
 
+Being connected is not the same as playing the Mac's sound: with dual device connection on, the
+headphones can be connected while the sound comes from the phone or the Mac's speakers. **Use for
+macOS Sound Output** is checked while the headphones are the Mac's sound output; choosing it makes
+them the output (not the microphone, which would lower the sound quality). It is greyed out while
+they have no audio connection to the Mac.
+
 **Only one program can hold the headphones' control channel.** While the app is connected, the
 vendor's phone app and the `unomas` CLI cannot reach the headphones; quit the app to use them. If
 the app shows "Another app might have control", close the phone app.

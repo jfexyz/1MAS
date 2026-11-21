@@ -54,6 +54,10 @@ public final class HeadphoneConnection {
 
     public private(set) var status: Status = .noDevice
     public private(set) var session: Session?
+    /// The Bluetooth address of the known device that is connected, such as "a4-05-6e-6c-de-be",
+    /// whether or not the control channel is open; nil when none is connected. Its audio device
+    /// is found by this address.
+    public private(set) var deviceAddress: String?
     /// The most recent error from a user action, for display. Cleared on the next success.
     public var lastError: String?
 
@@ -113,8 +117,10 @@ public final class HeadphoneConnection {
         let known = DeviceDirectory.knownDevices()
         guard let (device, model) = known.first(where: { $0.device.isConnected() }) else {
             status = known.first.map { .disconnected(name: $0.device.name ?? $0.model.bluetoothName) } ?? .noDevice
+            deviceAddress = nil
             return
         }
+        deviceAddress = device.addressString
         connectTask = Task {
             await connect(device, model: model, after: delay)
             connectTask = nil
@@ -152,7 +158,12 @@ public final class HeadphoneConnection {
                 try? await Task.sleep(for: .seconds(2 * attempt))
             }
         }
-        status = device.isConnected() ? .failed(name: name, failure: failure) : .disconnected(name: name)
+        if device.isConnected() {
+            status = .failed(name: name, failure: failure)
+        } else {
+            status = .disconnected(name: name)
+            deviceAddress = nil
+        }
     }
 
     private func adopt(_ session: Session, device: IOBluetoothDevice, name: String) {
@@ -184,6 +195,7 @@ public final class HeadphoneConnection {
             connectIfPossible(after: .seconds(3))
         } else {
             status = .disconnected(name: name)
+            deviceAddress = nil
         }
     }
 }

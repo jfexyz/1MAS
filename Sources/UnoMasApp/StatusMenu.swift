@@ -14,7 +14,9 @@ final class StatusMenu: NSObject, NSMenuDelegate {
     private let connection: HeadphoneConnection
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     private let menu = NSMenu()
-    private var loginItemError: String?
+    private let audioOutput = AudioOutput()
+    /// The last failure of one of the menu's own actions (launch at login, sound output).
+    private var menuError: String?
 
     init(connection: HeadphoneConnection) {
         self.connection = connection
@@ -128,11 +130,21 @@ final class StatusMenu: NSObject, NSMenuDelegate {
             }
         }
 
-        if let error = connection.lastError ?? loginItemError {
+        if let error = connection.lastError ?? menuError {
             menu.addItem(info("Error: \(error)"))
         }
 
         menu.addItem(.separator())
+        // While the headphones are connected over Bluetooth: checked when they are the sound
+        // output, disabled when they have no output device (only the control channel is up).
+        if let address = connection.deviceAddress {
+            let state = audioOutput.state(bluetoothAddress: address)
+            let output = NSMenuItem(title: "Use for macOS Sound Output", action: #selector(useForSoundOutput), keyEquivalent: "")
+            output.target = self
+            output.state = state == .current ? .on : .off
+            output.isEnabled = state != .unavailable
+            menu.addItem(output)
+        }
         let login = NSMenuItem(title: "Launch at Login", action: #selector(toggleLaunchAtLogin), keyEquivalent: "")
         login.target = self
         login.state = SMAppService.mainApp.status == .enabled ? .on : .off
@@ -231,9 +243,22 @@ final class StatusMenu: NSObject, NSMenuDelegate {
             } else {
                 try SMAppService.mainApp.register()
             }
-            loginItemError = nil
+            menuError = nil
         } catch {
-            loginItemError = error.localizedDescription
+            menuError = error.localizedDescription
+        }
+        rebuildMenu()
+    }
+
+    /// Output only, and only one way: like the Sound menu, choosing the current output again
+    /// changes nothing.
+    @objc private func useForSoundOutput() {
+        guard let address = connection.deviceAddress else { return }
+        do {
+            try audioOutput.makeDefault(bluetoothAddress: address)
+            menuError = nil
+        } catch {
+            menuError = "\(error)"
         }
         rebuildMenu()
     }
