@@ -160,6 +160,14 @@ public final class HeadphoneConnection {
         }
         if device.isConnected() {
             status = .failed(name: name, failure: failure)
+            // With no session there is no channel to close and report it; without this the
+            // failure would stay on show after the headphones disconnect.
+            // The watch stays until the next one replaces it: a disconnect notification fires only
+            // once, and unregistering here would release the target while it is still running.
+            watchForDisconnect(of: device) { [weak self] in
+                self?.status = .disconnected(name: name)
+                self?.deviceAddress = nil
+            }
         } else {
             status = .disconnected(name: name)
             deviceAddress = nil
@@ -170,11 +178,8 @@ public final class HeadphoneConnection {
         self.session = session
         status = .connected(name: name)
         session.onClose = { [weak self] in self?.sessionClosed(device: device, name: name) }
-
-        let target = NotificationTarget { [weak self] _ in self?.session?.close() }
-        disconnectTarget = target
-        disconnectNotification = device.register(
-            forDisconnectNotification: target, selector: #selector(NotificationTarget.fired(_:device:)))
+        // Closing the session leads to sessionClosed, which works out the new status.
+        watchForDisconnect(of: device) { [weak self] in self?.session?.close() }
 
         pollTask = Task { [weak self, batteryInterval] in
             while !Task.isCancelled {
@@ -188,15 +193,28 @@ public final class HeadphoneConnection {
         session = nil
         pollTask?.cancel()
         pollTask = nil
-        disconnectNotification?.unregister()
-        disconnectNotification = nil
-        disconnectTarget = nil
+        stopWatchingForDisconnect()
         if device.isConnected() {
             connectIfPossible(after: .seconds(3))
         } else {
             status = .disconnected(name: name)
             deviceAddress = nil
         }
+    }
+
+    /// Calls `handler` when `device` disconnects, replacing any earlier watch.
+    private func watchForDisconnect(of device: IOBluetoothDevice, handler: @escaping @MainActor () -> Void) {
+        stopWatchingForDisconnect()
+        let target = NotificationTarget { _ in handler() }
+        disconnectTarget = target
+        disconnectNotification = device.register(
+            forDisconnectNotification: target, selector: #selector(NotificationTarget.fired(_:device:)))
+    }
+
+    private func stopWatchingForDisconnect() {
+        disconnectNotification?.unregister()
+        disconnectNotification = nil
+        disconnectTarget = nil
     }
 }
 
