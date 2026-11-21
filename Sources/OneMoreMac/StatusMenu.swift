@@ -51,8 +51,8 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         menu.removeAllItems()
         // Label-and-value rows. Their titles are set last, once the menu's width is known.
         var aligned: [(item: NSMenuItem, label: String, value: String)] = []
-        func addAligned(_ label: String, _ value: String) {
-            let item = info("")
+        func addAligned(_ label: String, _ value: String, item: NSMenuItem? = nil) {
+            let item = item ?? info("")
             menu.addItem(item)
             aligned.append((item, label, value))
         }
@@ -103,10 +103,10 @@ final class StatusMenu: NSObject, NSMenuDelegate {
             if session.model.dualDevice, let on = session.state.dualDevice {
                 menu.addItem(.separator())
                 menu.addItem(.sectionHeader(title: "Dual Device Connection"))
-                let item = NSMenuItem(title: on ? "Enabled" : "Disabled", action: #selector(toggleDualDevice), keyEquivalent: "")
+                let item = NSMenuItem(title: "", action: #selector(toggleDualDevice), keyEquivalent: "")
                 item.target = self
                 item.state = on ? .on : .off
-                menu.addItem(item)
+                addAligned(on ? "Enabled" : "Disabled", on ? "Click to Disable" : "Click to Enable", item: item)
             }
 
             menu.addItem(.separator())
@@ -140,21 +140,27 @@ final class StatusMenu: NSObject, NSMenuDelegate {
     }
 
     /// Titles each row `label`, then `value` right-aligned with a tab stop at the widest title in
-    /// the menu, which is the menu's right edge as long as no item has a key equivalent.
+    /// the menu, which is the menu's right edge as long as no item has a key equivalent. The value
+    /// is drawn in the disabled items' grey; so is the label, unless the item can be clicked. A
+    /// highlighted item is still drawn in white.
     private func alignValues(_ rows: [(item: NSMenuItem, label: String, value: String)]) {
         let font = NSFont.menuFont(ofSize: 0)
         func width(_ text: String) -> CGFloat {
             NSAttributedString(string: text, attributes: [.font: font]).size().width
         }
-        let location = (menu.items.map { width($0.title) } + rows.map { width("\($0.label)    \($0.value)") }).max() ?? 0
+        // At least this much space between a label and its value, widening the menu if need be.
+        let minimumGap: CGFloat = 50
+        let location = (menu.items.map { width($0.title) } + rows.map { width($0.label) + minimumGap + width($0.value) }).max() ?? 0
         let style = NSMutableParagraphStyle()
         style.tabStops = [NSTextTab(textAlignment: .right, location: location)]
+        let grey: [NSAttributedString.Key: Any] = [.font: font, .paragraphStyle: style, .foregroundColor: NSColor.disabledControlTextColor]
         for row in rows {
-            row.item.attributedTitle = NSAttributedString(string: "\(row.label)\t\(row.value)", attributes: [
-                .font: font,
-                .paragraphStyle: style,
-                .foregroundColor: NSColor.disabledControlTextColor,
-            ])
+            let title = NSMutableAttributedString(
+                string: "\(row.label)\t",
+                attributes: row.item.isEnabled ? [.font: font, .paragraphStyle: style] : grey
+            )
+            title.append(NSAttributedString(string: row.value, attributes: grey))
+            row.item.attributedTitle = title
         }
     }
 
