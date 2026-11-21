@@ -27,6 +27,8 @@ enum SupportReport {
             URLQueryItem(name: "app-version", value: appVersion),
             URLQueryItem(name: "replies", value: replies(session)),
         ]
+        // URLComponents leaves "+" as it is, which GitHub reads as a space.
+        components.percentEncodedQuery = components.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
         return components.url!
     }
 
