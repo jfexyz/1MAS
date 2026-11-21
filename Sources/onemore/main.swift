@@ -1,5 +1,6 @@
 import Foundation
 import IOBluetooth
+import OneMoreBluetooth
 import OneMoreKit
 
 let usage = """
@@ -8,7 +9,7 @@ let usage = """
     commands:
       devices                 list paired devices whose name contains --device (default "1MORE")
       sdp [--refresh]         list the device's SDP service records and RFCOMM channels
-      probe                   handshake, then read device info, listen mode, and EQ preset
+      probe                   read device info, listen mode, and EQ preset
       mode off|anc|transparent|<0-7>
                               set the listen mode and read it back
       raw <cmd> [payload]     send one request (hex) and print the reply
@@ -52,10 +53,13 @@ func fail(_ message: String) -> Never {
     exit(1)
 }
 
+func log(_ message: String) {
+    FileHandle.standardError.write(Data("[link] \(message)\n".utf8))
+}
+
 func matchingDevices(_ query: String) -> [IOBluetoothDevice] {
-    let paired = (IOBluetoothDevice.pairedDevices() as? [IOBluetoothDevice]) ?? []
     let normalized = query.lowercased().replacingOccurrences(of: ":", with: "-")
-    return paired.filter {
+    return DeviceDirectory.pairedDevices().filter {
         ($0.name ?? "").lowercased().contains(normalized)
             || ($0.addressString ?? "").lowercased() == normalized
     }
@@ -63,104 +67,52 @@ func matchingDevices(_ query: String) -> [IOBluetoothDevice] {
 
 func uuidString(_ uuid: IOBluetoothSDPUUID) -> String {
     let bytes = [UInt8](uuid as Data)
-    return bytes.count == 2 || bytes.count == 4 ? "0x" + bytes.hex.replacingOccurrences(of: " ", with: "")
-        : bytes.hex.replacingOccurrences(of: " ", with: "")
-}
-
-/// The record's ServiceClassIDList (attribute 0x0001). IOBluetooth hands back a one-element list
-/// as the bare UUID element, so both shapes are handled.
-func serviceClassUUIDs(_ record: IOBluetoothSDPServiceRecord) -> [IOBluetoothSDPUUID] {
-    guard let element = record.getAttributeDataElement(0x0001) else { return [] }
-    if let uuid = element.getUUIDValue() { return [uuid] }
-    let list = (element.getArrayValue() as? [IOBluetoothSDPDataElement]) ?? []
-    return list.compactMap { $0.getUUIDValue() }
-}
-
-func serviceClasses(_ record: IOBluetoothSDPServiceRecord) -> [String] {
-    serviceClassUUIDs(record).map(uuidString)
-}
-
-/// Receives the result of an SDP query on the main run loop.
-@MainActor
-final class SDPWaiter: NSObject {
-    var status: IOReturn?
-    @objc func sdpQueryComplete(_ device: IOBluetoothDevice!, status: IOReturn) {
-        self.status = status
-    }
-}
-
-@MainActor
-func refreshSDP(_ device: IOBluetoothDevice) {
-    let waiter = SDPWaiter()
-    let start = device.performSDPQuery(waiter)
-    guard start == kIOReturnSuccess else { fail("SDP query failed to start: \(ioReturnName(start))") }
-    guard spin(timeout: 20, until: { waiter.status != nil }) else { fail("SDP query timed out") }
-    if waiter.status != kIOReturnSuccess {
-        print("SDP query finished with status \(ioReturnName(waiter.status!))")
-    }
+    let digits = bytes.hex.replacingOccurrences(of: " ", with: "")
+    return bytes.count <= 4 ? "0x" + digits : digits
 }
 
 func printServices(_ device: IOBluetoothDevice) {
-    let records = (device.services as? [IOBluetoothSDPServiceRecord]) ?? []
+    let records = DeviceDirectory.serviceRecords(device)
     print("\(records.count) service record(s) for \(device.name ?? "?") [\(device.addressString ?? "?")]")
     for record in records {
-        var channel: BluetoothRFCOMMChannelID = 0
-        let rfcomm = record.getRFCOMMChannelID(&channel) == kIOReturnSuccess ? "RFCOMM \(channel)" : "no RFCOMM"
+        let rfcomm = DeviceDirectory.rfcommChannel(record).map { "RFCOMM \($0)" } ?? "no RFCOMM"
         let name = record.getServiceName() ?? "(unnamed)"
-        print("  \(name.padding(toLength: 28, withPad: " ", startingAt: 0)) \(rfcomm.padding(toLength: 10, withPad: " ", startingAt: 0)) \(serviceClasses(record).joined(separator: ", "))")
-    }
-}
-
-/// The RFCOMM channel of the record whose service class is exactly Serial Port (0x1101).
-///
-/// Deliberately not `IOBluetoothDevice.getServiceRecord(for:)`: on the SonoFlow that returns the
-/// "OTA1" firmware-update service for 0x1101, which must never be opened by accident.
-func serialPortChannel(_ device: IOBluetoothDevice) -> BluetoothRFCOMMChannelID? {
-    let serialPort = IOBluetoothSDPUUID(uuid16: 0x1101)!
-    let records = (device.services as? [IOBluetoothSDPServiceRecord]) ?? []
-    for record in records {
-        let name = record.getServiceName() ?? ""
-        guard !name.uppercased().contains("OTA"),
-              serviceClassUUIDs(record).contains(where: { $0.isEqual(to: serialPort) })
-        else { continue }
-        var channel: BluetoothRFCOMMChannelID = 0
-        if record.getRFCOMMChannelID(&channel) == kIOReturnSuccess { return channel }
-    }
-    return nil
-}
-
-@MainActor
-func connect(_ device: IOBluetoothDevice, _ options: Options) throws -> RFCOMMLink {
-    if options.refresh { refreshSDP(device) }
-    guard let channelID = options.channel ?? serialPortChannel(device) else { throw LinkError.noSerialService }
-    let records = (device.services as? [IOBluetoothSDPServiceRecord]) ?? []
-    for record in records where (record.getServiceName() ?? "").uppercased().contains("OTA") {
-        var channel: BluetoothRFCOMMChannelID = 0
-        if record.getRFCOMMChannelID(&channel) == kIOReturnSuccess, channel == channelID {
-            fail("channel \(channelID) is the firmware-update service; refusing to open it")
-        }
-    }
-    let link = RFCOMMLink(device: device, verbose: options.verbose)
-    try link.open(channelID: channelID)
-    return link
-}
-
-@MainActor
-func handshake(_ link: RFCOMMLink) {
-    do {
-        let reply = try link.request(Command.handshake.rawValue, payload: [0x01])
-        print("handshake: \(reply.payload.hex)")
-    } catch {
-        print("handshake: \(error) (continuing)")
+        let classes = DeviceDirectory.serviceClassUUIDs(record).map(uuidString).joined(separator: ", ")
+        print("  \(name.padding(toLength: 28, withPad: " ", startingAt: 0)) "
+            + "\(rfcomm.padding(toLength: 10, withPad: " ", startingAt: 0)) \(classes)")
     }
 }
 
 func describe(_ mode: UInt8) -> String {
-    ListenMode(rawValue: mode).map { "\($0) (\(mode))" } ?? "unknown (\(mode))"
+    ListenMode(rawValue: mode).map { "\($0.label) (\(mode))" } ?? "unknown (\(mode))"
 }
 
 @MainActor
-func run() throws {
+func openSession(_ device: IOBluetoothDevice, _ options: Options) async throws -> Session {
+    if options.refresh { try await DeviceDirectory.refreshServices(device) }
+    guard let channelID = options.channel ?? DeviceDirectory.serialPortChannel(device) else {
+        throw BluetoothError.noSerialService
+    }
+    if options.verbose { log("opening RFCOMM channel \(channelID)") }
+    let transport = try await RFCOMMTransport.open(device: device, channelID: channelID)
+    if options.verbose {
+        transport.byteObserver = { bytes, outgoing in log("\(outgoing ? "->" : "<-") \(bytes.hex)") }
+    }
+    // Unknown models get the SonoFlow's table; the CLI is for probing, so it does not refuse them.
+    let model = ModelInfo.matching(bluetoothName: device.name ?? "") ?? .sonoFlow
+    let session = Session(transport: transport, model: model)
+    session.unsolicitedObserver = { frame in
+        print(String(format: "unsolicited %04X: %@", frame.command, frame.payload.hex))
+    }
+    if !options.skipHandshake {
+        let reply = try? await session.request(Command.handshake.rawValue, payload: [0x01], timeout: .seconds(1))
+        print("handshake: \(reply?.payload.hex ?? "no reply")")
+    }
+    return session
+}
+
+@MainActor
+func run() async throws {
     let options = parseOptions()
     guard let command = options.arguments.first else { print(usage); exit(2) }
     let rest = Array(options.arguments.dropFirst())
@@ -173,40 +125,40 @@ func run() throws {
     }
 
     let candidates = matchingDevices(options.device)
-    guard let device = candidates.first else { throw LinkError.deviceNotFound(options.device) }
+    guard let device = candidates.first else { fail("no paired device matches \"\(options.device)\"") }
     if candidates.count > 1 { print("note: several matches, using \(device.name ?? "?")") }
 
     switch command {
     case "sdp":
-        if options.refresh { refreshSDP(device) }
+        if options.refresh { try await DeviceDirectory.refreshServices(device) }
         printServices(device)
 
     case "probe":
-        let link = try connect(device, options)
-        defer { link.close() }
-        if !options.skipHandshake { handshake(link) }
-        let info = try link.request(Command.deviceInfo.rawValue)
+        let session = try await openSession(device, options)
+        defer { session.close() }
+        let info = try await session.request(Command.deviceInfo.rawValue)
         print("device info: \(info.payload.hex)")
         if let decoded = DeviceInfo(payload: info.payload) { print("  \(decoded)") }
-        let mode = try link.request(Command.getListenMode.rawValue)
+        let mode = try await session.request(Command.getListenMode.rawValue)
         print("listen mode: \(mode.payload.hex) -> \(mode.payload.first.map(describe) ?? "?")")
-        let preset = try link.request(Command.getEQPreset.rawValue)
-        print("EQ preset: \(preset.payload.hex)")
-        link.listen(for: 1)
+        let preset = try await session.request(Command.getEQPreset.rawValue)
+        print("EQ preset: \(preset.payload.hex) -> \(preset.payload.first.map(EQPreset.name) ?? "?")")
+        try await Task.sleep(for: .seconds(1))
 
     case "mode":
         let names: [String: ListenMode] = ["off": .off, "anc": .strongANC, "transparent": .transparent]
-        guard let arg = rest.first,
-              let value = names[arg]?.rawValue ?? UInt8(arg), value <= 7
-        else { fail("mode needs off, anc, transparent, or 0-7") }
-        let link = try connect(device, options)
-        defer { link.close() }
-        if !options.skipHandshake { handshake(link) }
-        let result = try link.request(Command.setListenMode.rawValue, payload: [value])
+        guard let arg = rest.first, let value = names[arg]?.rawValue ?? UInt8(arg), value <= 7 else {
+            fail("mode needs off, anc, transparent, or 0-7")
+        }
+        let session = try await openSession(device, options)
+        defer { session.close() }
+        // Raw request rather than Session.setListenMode, so values outside the model table can be
+        // probed too.
+        let result = try await session.request(Command.setListenMode.rawValue, payload: [value])
         print("set \(describe(value)): \(result.payload.hex)")
         for delay in [0.3, 1.0, 2.0] {
-            link.listen(for: delay)
-            let mode = try link.request(Command.getListenMode.rawValue)
+            try await Task.sleep(for: .seconds(delay))
+            let mode = try await session.request(Command.getListenMode.rawValue)
             print("  read back after +\(delay)s: \(mode.payload.first.map(describe) ?? "?")")
         }
 
@@ -215,19 +167,16 @@ func run() throws {
               let payload = [UInt8](hex: rest.dropFirst().joined())
         else { fail("raw needs a command and an optional payload, in hex") }
         let cmd = cmdBytes.reduce(UInt16(0)) { $0 << 8 | UInt16($1) }
-        guard !Command.forbidden.contains(cmd) else { fail(String(format: "%04X is forbidden", cmd)) }
-        let link = try connect(device, options)
-        defer { link.close() }
-        if !options.skipHandshake { handshake(link) }
-        let reply = try link.request(cmd, payload: payload)
+        let session = try await openSession(device, options)
+        defer { session.close() }
+        let reply = try await session.request(cmd, payload: payload)
         print(String(format: "%04X -> %@", cmd, reply.payload.hex))
 
     case "listen":
-        let seconds = rest.first.flatMap(TimeInterval.init) ?? 10
-        let link = try connect(device, options)
-        defer { link.close() }
-        if !options.skipHandshake { handshake(link) }
-        link.listen(for: seconds)
+        let seconds = rest.first.flatMap(Double.init) ?? 10
+        let session = try await openSession(device, options)
+        defer { session.close() }
+        try await Task.sleep(for: .seconds(seconds))
 
     default:
         print(usage)
@@ -235,8 +184,14 @@ func run() throws {
     }
 }
 
-do {
-    try MainActor.assumeIsolated { try run() }
-} catch {
-    fail("\(error)")
+// IOBluetooth delivers its callbacks through the main run loop, so the work runs as a main-actor
+// task while the run loop spins.
+Task { @MainActor in
+    do {
+        try await run()
+        exit(0)
+    } catch {
+        fail("\(error)")
+    }
 }
+RunLoop.main.run()

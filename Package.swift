@@ -11,18 +11,25 @@ let package = Package(
     platforms: [.macOS(.v14)],
     products: [
         .library(name: "OneMoreKit", targets: ["OneMoreKit"]),
+        .library(name: "OneMoreBluetooth", targets: ["OneMoreBluetooth"]),
         .executable(name: "onemore", targets: ["onemore"]),
     ],
     targets: [
-        // Pure protocol code: framing, commands, decoding. No Bluetooth, fully unit-testable.
+        // Pure protocol code: framing, commands, decoding, the session. No Bluetooth, fully
+        // unit-testable.
         .target(name: "OneMoreKit"),
-        // Command-line probe and control tool, talking RFCOMM through IOBluetooth.
+        // IOBluetooth: device lookup, the RFCOMM transport, and connection management.
+        .target(
+            name: "OneMoreBluetooth",
+            dependencies: ["OneMoreKit"],
+            linkerSettings: [.linkedFramework("IOBluetooth")]
+        ),
+        // Command-line probe and control tool.
         .executableTarget(
             name: "onemore",
-            dependencies: ["OneMoreKit"],
+            dependencies: ["OneMoreKit", "OneMoreBluetooth"],
             exclude: ["Info.plist"],
             linkerSettings: [
-                .linkedFramework("IOBluetooth"),
                 .unsafeFlags([
                     "-Xlinker", "-sectcreate",
                     "-Xlinker", "__TEXT",
