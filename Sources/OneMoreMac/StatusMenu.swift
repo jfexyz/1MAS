@@ -102,7 +102,8 @@ final class StatusMenu: NSObject, NSMenuDelegate {
 
             if session.model.dualDevice, let on = session.state.dualDevice {
                 menu.addItem(.separator())
-                let item = NSMenuItem(title: "Dual Device Connection", action: #selector(toggleDualDevice), keyEquivalent: "")
+                menu.addItem(.sectionHeader(title: "Dual Device Connection"))
+                let item = NSMenuItem(title: on ? "Enabled" : "Disabled", action: #selector(toggleDualDevice), keyEquivalent: "")
                 item.target = self
                 item.state = on ? .on : .off
                 menu.addItem(item)
@@ -196,7 +197,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
     @objc private func toggleDualDevice() {
         guard let on = connection.session?.state.dualDevice else { return }
         let alert = NSAlert()
-        alert.messageText = on ? "Turn off Dual Device Connection?" : "Turn on Dual Device Connection?"
+        alert.messageText = on ? "Disable Dual Device Connection" : "Enable Dual Device Connection"
         alert.informativeText = "Changing this setting restarts the headphones. Audio will stop playing until they reconnect."
         alert.addButton(withTitle: "Restart")
         alert.addButton(withTitle: "Cancel")
