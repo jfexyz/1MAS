@@ -70,9 +70,10 @@ flag, then gain, frequency, and Q, two bytes each.
   did not show up in it, so how they apply is still open.
 - The flag was `01` on the first nine records and `02` on the last.
 
-**Dual device connection** (2026-11-21). PairFree's model data says the SonoFlow lacks it, but the
-vendor's iPhone app offers it and the headphones answer `77`: `00` while off, `01` after the phone
-app turned it on. Changing it **restarts the headphones**, from either app:
+**Dual device connection** (2026-11-21). PairFree's model data said the SonoFlow lacked it (it added
+it later the same day, from 1MORE Life's Lab page), but the vendor's iPhone app offers it and the
+headphones answer `77`: `00` while off, `01` after the phone app turned it on. Changing it
+**restarts the headphones**, from either app:
 
 | Time  | Event                                                              |
 | ----- | ------------------------------------------------------------------ |

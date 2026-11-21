@@ -22,7 +22,7 @@ public struct ModelInfo: Equatable, Hashable, Sendable {
         // Studio to Vocal Booster. Custom (0x0C) selects the custom curve, which is not editable
         // here yet.
         eqPresets: Array(0x00...0x0B),
-        // PairFree's data says no, but firmware 1.0.5 has it and the vendor app shows it.
+        // Verified on firmware 1.0.5. PairFree's data said no until 2026-11-21.
         dualDevice: true
     )
 
