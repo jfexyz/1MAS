@@ -1,5 +1,5 @@
 #!/bin/sh
-# Builds the menu bar app and wraps it in build/1more-mac.app.
+# Builds the menu bar app and wraps it in build/1more.app.
 #
 #   scripts/build-app.sh                       # release build, ad-hoc signed
 #   SIGN_IDENTITY="Apple Development: …" scripts/build-app.sh
@@ -11,7 +11,7 @@ set -eu
 cd "$(dirname "$0")/.."
 CONFIG=${CONFIG:-release}
 SIGN_IDENTITY=${SIGN_IDENTITY:--}
-APP=build/1more-mac.app
+APP=build/1more.app
 
 swift build -c "$CONFIG" --product OneMoreMac
 BIN="$(swift build -c "$CONFIG" --show-bin-path)/OneMoreMac"

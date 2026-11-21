@@ -7,7 +7,7 @@ import PackageDescription
 let packageRoot = URL(fileURLWithPath: #filePath).deletingLastPathComponent().path
 
 let package = Package(
-    name: "1more-mac",
+    name: "1more-for-mac",
     platforms: [.macOS(.v14)],
     products: [
         .library(name: "OneMoreKit", targets: ["OneMoreKit"]),

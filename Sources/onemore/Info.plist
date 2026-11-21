@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleIdentifier</key>
-	<string>local.onemore-mac.cli</string>
+	<string>local.onemore-for-mac.cli</string>
 	<key>CFBundleName</key>
 	<string>onemore</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>

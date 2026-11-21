@@ -1,13 +1,18 @@
-# 1more-mac
+# 1MORE for macOS
 
-A macOS controller for 1MORE headphones: noise control (off / ANC / transparency), EQ presets, and
-battery. Built first for the SonoFlow (HC905); other 1MORE models share the protocol and are planned
-through a per-model capability table.
+A macOS controller for various [1MORE headphones](https://usa.1more.com).
 
-Status: works on a SonoFlow (firmware 1.0.5). A menu bar app shows battery, model, and firmware,
-switches between off, noise cancellation, and transparency, chooses the EQ preset, and turns dual
-device connection on or off (which restarts the headphones); the `onemore` command-line tool does
-the same for probing. `docs/HARDWARE.md` records what has been verified on hardware.
+The menu bar app displays current battery charge, lists model and firmware numbers, switches between
+noise control modes (off/active noise cancellation/transparency), chooses equalizer presets, and
+enables/disables dual device connection. The `onemore` command-line tool does the same for probing.
+
+**This app is not affiliated with nor endorsed by 1MORE.**
+
+Built first for the original SonoFlow (model HC905); other 1MORE models share the protocol and are
+planned (and might already work... pull requests are welcome). `docs/HARDWARE.md` records what has
+been verified on actual hardware.
+
+Status: working and testing with the original SonoFlow (model HC905) on firmware v1.0.5.
 
 Requires macOS 14 (Sonoma) or later; so far tested only on macOS 27.
 
@@ -20,7 +25,7 @@ Requires macOS 14 (Sonoma) or later; so far tested only on macOS 27.
 | `Sources/OneMoreMac`       | The menu bar app, in AppKit (`NSStatusItem` and `NSMenu`).                                                                                           |
 | `Sources/onemore`          | `onemore`, a CLI for probing the headphones.                                                                                                         |
 | `Support/OneMoreMac`       | The app's `Info.plist` and icon.                                                                                                                     |
-| `scripts/build-app.sh`     | Builds and signs `build/1more-mac.app`.                                                                                                              |
+| `scripts/build-app.sh`     | Builds and signs `build/1more.app`.                                                                                                                  |
 | `scripts/make-icon.swift`  | Writes the app icon, `AppIcon.icon`, for Icon Composer. Its header says how to run it.                                                               |
 | `Tests/OneMoreKitTests`    | Unit tests, pinned to real packets from the public sources and the hardware.                                                                         |
 
@@ -41,11 +46,11 @@ opens an app built on the same Mac without complaint.
 **Build and install:**
 
 ```sh
-git clone https://github.com/jfexyz/1more-mac.git
-cd 1more-mac
+git clone https://github.com/jfexyz/1more-for-mac.git
+cd 1more-for-mac
 scripts/build-app.sh
-mv build/1more-mac.app /Applications/
-open /Applications/1more-mac.app
+mv build/1more.app /Applications/
+open /Applications/1more.app
 ```
 
 If the build warns that it could not compile the app icon although Xcode 26 or later is installed,
@@ -62,11 +67,11 @@ bar, not the Dock. To start it whenever you log in, turn on Launch at Login in i
 **Updating:** quit the app from its menu, then:
 
 ```sh
-cd 1more-mac
+cd 1more-for-mac
 git pull
 scripts/build-app.sh
-rm -rf /Applications/1more-mac.app && mv build/1more-mac.app /Applications/
-open /Applications/1more-mac.app
+rm -rf /Applications/1more.app && mv build/1more.app /Applications/
+open /Applications/1more.app
 ```
 
 macOS may ask for Bluetooth permission again after an update, since each build is signed afresh (see
@@ -88,7 +93,7 @@ the app shows "Another app might have control", close the phone app.
 ```sh
 swift build
 swift test
-scripts/build-app.sh && open build/1more-mac.app
+scripts/build-app.sh && open build/1more.app
 $(swift build --show-bin-path)/onemore --help
 ```
 
