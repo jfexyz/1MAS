@@ -78,6 +78,16 @@ final class StatusMenu: NSObject, NSMenuDelegate {
             } else {
                 statusLines.forEach { menu.addItem(info($0)) }
             }
+            // While the headphones are connected over Bluetooth: checked when they are the sound
+            // output, disabled when they have no output device (only the control channel is up).
+            if let address = connection.deviceAddress {
+                let state = audioOutput.state(bluetoothAddress: address)
+                let output = NSMenuItem(title: "Use for macOS Sound Output", action: #selector(useForSoundOutput), keyEquivalent: "")
+                output.target = self
+                output.state = state == .current ? .on : .off
+                output.isEnabled = state != .unavailable
+                menu.addItem(output)
+            }
         } else {
             menu.addItem(info("No supported 1MORE headphones paired"))
         }
@@ -135,16 +145,6 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         }
 
         menu.addItem(.separator())
-        // While the headphones are connected over Bluetooth: checked when they are the sound
-        // output, disabled when they have no output device (only the control channel is up).
-        if let address = connection.deviceAddress {
-            let state = audioOutput.state(bluetoothAddress: address)
-            let output = NSMenuItem(title: "Use for macOS Sound Output", action: #selector(useForSoundOutput), keyEquivalent: "")
-            output.target = self
-            output.state = state == .current ? .on : .off
-            output.isEnabled = state != .unavailable
-            menu.addItem(output)
-        }
         let login = NSMenuItem(title: "Launch at Login", action: #selector(toggleLaunchAtLogin), keyEquivalent: "")
         login.target = self
         login.state = SMAppService.mainApp.status == .enabled ? .on : .off
