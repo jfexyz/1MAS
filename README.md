@@ -19,7 +19,7 @@ the same for probing. `docs/HARDWARE.md` records what has been verified on hardw
 | `Sources/onemore`          | `onemore`, a CLI for probing the headphones.                                                                                                         |
 | `Support/OneMoreMac`       | The app's `Info.plist` and icon.                                                                                                                     |
 | `scripts/build-app.sh`     | Builds and signs `build/1more-mac.app`.                                                                                                              |
-| `scripts/make-icon.swift`  | Draws the app icon, `AppIcon.icns`. Its header says how to run it.                                                                                   |
+| `scripts/make-icon.swift`  | Writes the app icon, `AppIcon.icon`, for Icon Composer. Its header says how to run it.                                                               |
 | `Tests/OneMoreKitTests`    | Unit tests, pinned to real packets from the public sources and the hardware.                                                                         |
 
 ## Building and running
@@ -31,8 +31,9 @@ scripts/build-app.sh && open build/1more-mac.app
 $(swift build --show-bin-path)/onemore --help
 ```
 
-The app is a menu bar item only (no Dock icon). The icon is the headphones with a letter for the
-current mode: **A** for active noise cancellation, **T** for transparency, **O** for off. It is
+`scripts/build-app.sh` needs Xcode, not only the Command Line Tools, for `actool` to compile the app
+icon. The app is a menu bar item only (no Dock icon). The icon is the headphones with a letter for
+the current mode: **A** for active noise cancellation, **T** for transparency, **O** for off. It is
 dimmed when no headphones are connected. Its menu has a Launch at Login toggle, which registers the
 app where it is, so move it to `/Applications` first if you want that. On first launch macOS asks
 for Bluetooth permission. The app is ad-hoc signed by default, so a rebuild may ask again;

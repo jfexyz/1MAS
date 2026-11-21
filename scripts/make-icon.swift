@@ -1,31 +1,34 @@
-// Draws the app icon and writes Support/OneMoreMac/AppIcon.icns.
+// Writes the app icon as an Icon Composer document, Support/OneMoreMac/AppIcon.icon.
 //
 //   curl -o /tmp/1more-logo.png 'https://usa.1more.com/cdn/shop/files/logo_pc.png'
 //   swift scripts/make-icon.swift /tmp/1more-logo.png
 //
-// The icon is the menu bar glyph (the SF Symbol `headphones`) in white on a macOS-style squircle
-// in 1MORE's orange, with the "1" of 1MORE's wordmark in the space under the headband. The "1" is
-// cut from 1MORE's logo image, which is not in this repository; the generated .icns is.
+// The icon is the menu bar glyph (the SF Symbol `headphones`) in white on 1MORE's orange, with the
+// "1" of 1MORE's wordmark in the space under the headband. macOS draws the shape, the glass, and
+// the dark and tinted variants; the document holds only the background gradient and one glyph
+// layer. It can be opened and adjusted in Icon Composer (in Xcode), and build-app.sh compiles it
+// with actool. The "1" is cut from 1MORE's logo image, which is not in this repository.
 
 import AppKit
 
 let arguments = CommandLine.arguments
 guard arguments.count >= 2 else {
-    print("usage: swift scripts/make-icon.swift <1MORE logo PNG> [output.icns]")
+    print("usage: swift scripts/make-icon.swift <1MORE logo PNG> [output.icon]")
     exit(2)
 }
 let logoPath = arguments[1]
-let output = arguments.count > 2 ? arguments[2] : "Support/OneMoreMac/AppIcon.icns"
+let output = URL(fileURLWithPath: arguments.count > 2 ? arguments[2] : "Support/OneMoreMac/AppIcon.icon")
 
-func rgb(_ hex: UInt32) -> NSColor {
-    NSColor(srgbRed: CGFloat(hex >> 16 & 0xFF) / 255, green: CGFloat(hex >> 8 & 0xFF) / 255,
-            blue: CGFloat(hex & 0xFF) / 255, alpha: 1)
+/// A colour as icon.json writes it.
+func srgb(_ hex: UInt32) -> String {
+    let parts = [hex >> 16 & 0xFF, hex >> 8 & 0xFF, hex & 0xFF].map { String(format: "%.5f", Double($0) / 255) }
+    return "srgb:" + (parts + ["1.00000"]).joined(separator: ",")
 }
 
 // 1MORE's orange is the button colour on usa.1more.com, rgb(255, 61, 31); the gradient starts
 // lighter at the top and ends on it.
-let gradientTop = rgb(0xFF7A55)
-let gradientBottom = rgb(0xFF3D1F)
+let gradientTop = srgb(0xFF7A55)
+let gradientBottom = srgb(0xFF3D1F)
 
 /// The wordmark's "1" as an opaque mask, and its vertical stroke's centre as a fraction of its
 /// width. In the logo image (2652 x 727 px) the "1" is the black shape around x 874-1005,
@@ -87,72 +90,53 @@ func glyph(size: CGFloat, one: (mask: NSImage, stemCentre: CGFloat)) -> NSImage 
     }
 }
 
-/// A squircle (superellipse, exponent 5), close to the continuous-corner shape of macOS icons.
-func squircle(_ r: NSRect) -> NSBezierPath {
-    let path = NSBezierPath()
-    let n = 5.0, steps = 720
-    for i in 0...steps {
-        let t = Double(i) / Double(steps) * 2 * .pi
-        let c = cos(t), s = sin(t)
-        let point = NSPoint(x: r.midX + r.width / 2 * CGFloat(copysign(pow(abs(c), 2 / n), c)),
-                            y: r.midY + r.height / 2 * CGFloat(copysign(pow(abs(s), 2 / n), s)))
-        i == 0 ? path.move(to: point) : path.line(to: point)
-    }
-    path.close()
-    return path
-}
-
-/// The icon at `pixels` square, on Apple's macOS grid: an 824/1024 squircle with a soft drop
-/// shadow and a vertical gradient, and the glyph with a faint shadow of its own.
-func icon(pixels: Int, one: (mask: NSImage, stemCentre: CGFloat)) -> NSBitmapImageRep {
+/// The glyph layer: 1024 px square, transparent, the glyph in white. Icon Composer's canvas is the
+/// whole icon shape, and the glyph spans 78% of it, as it spanned the squircle in the first,
+/// hand-drawn version of the icon.
+func glyphLayer() -> Data {
+    let pixels = 1024
     let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: pixels, pixelsHigh: pixels, bitsPerSample: 8,
                                samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB,
                                bytesPerRow: 0, bitsPerPixel: 0)!
     NSGraphicsContext.saveGraphicsState()
     NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
-    let u = CGFloat(pixels) / 1024
-    let path = squircle(NSRect(x: 100 * u, y: 100 * u, width: 824 * u, height: 824 * u))
-
-    NSGraphicsContext.saveGraphicsState()
-    let shadow = NSShadow()
-    shadow.shadowColor = NSColor.black.withAlphaComponent(0.28)
-    shadow.shadowOffset = NSSize(width: 0, height: -12 * u)
-    shadow.shadowBlurRadius = 24 * u
-    shadow.set()
-    gradientBottom.setFill()
-    path.fill()
+    let g: CGFloat = 796
+    glyph(size: g, one: wordmarkOne())
+        .draw(in: NSRect(x: (CGFloat(pixels) - g) / 2, y: (CGFloat(pixels) - g) / 2, width: g, height: g))
     NSGraphicsContext.restoreGraphicsState()
-    NSGradient(starting: gradientTop, ending: gradientBottom)!.draw(in: path, angle: -90)
-
-    NSGraphicsContext.saveGraphicsState()
-    let glyphShadow = NSShadow()
-    glyphShadow.shadowColor = NSColor.black.withAlphaComponent(0.18)
-    glyphShadow.shadowOffset = NSSize(width: 0, height: -6 * u)
-    glyphShadow.shadowBlurRadius = 12 * u
-    glyphShadow.set()
-    let g = 640 * u
-    glyph(size: g, one: one).draw(in: NSRect(x: (CGFloat(pixels) - g) / 2, y: (CGFloat(pixels) - g) / 2, width: g, height: g))
-    NSGraphicsContext.restoreGraphicsState()
-
-    NSGraphicsContext.restoreGraphicsState()
-    return rep
+    return rep.representation(using: .png, properties: [:])!
 }
 
-let one = wordmarkOne()
-let iconset = FileManager.default.temporaryDirectory.appendingPathComponent("AppIcon-\(UUID().uuidString).iconset")
-try FileManager.default.createDirectory(at: iconset, withIntermediateDirectories: true)
-defer { try? FileManager.default.removeItem(at: iconset) }
-for points in [16, 32, 128, 256, 512] {
-    for scale in [1, 2] {
-        let name = scale == 1 ? "icon_\(points)x\(points).png" : "icon_\(points)x\(points)@2x.png"
-        let png = icon(pixels: points * scale, one: one).representation(using: .png, properties: [:])!
-        try png.write(to: iconset.appendingPathComponent(name))
+let iconJSON = """
+{
+  "fill" : {
+    "linear-gradient" : [
+      "\(gradientTop)",
+      "\(gradientBottom)"
+    ],
+    "orientation" : {
+      "start" : { "x" : 0.5, "y" : 0 },
+      "stop" : { "x" : 0.5, "y" : 0.7 }
     }
+  },
+  "groups" : [
+    {
+      "layers" : [
+        { "image-name" : "glyph.png", "name" : "glyph" }
+      ],
+      "shadow" : { "kind" : "neutral", "opacity" : 0.5 },
+      "translucency" : { "enabled" : false, "value" : 0.5 }
+    }
+  ],
+  "supported-platforms" : {
+    "squares" : "shared"
+  }
 }
-let iconutil = Process()
-iconutil.executableURL = URL(fileURLWithPath: "/usr/bin/iconutil")
-iconutil.arguments = ["--convert", "icns", "--output", output, iconset.path]
-try iconutil.run()
-iconutil.waitUntilExit()
-guard iconutil.terminationStatus == 0 else { exit(iconutil.terminationStatus) }
-print("Wrote \(output)")
+
+"""
+
+let assets = output.appendingPathComponent("Assets")
+try FileManager.default.createDirectory(at: assets, withIntermediateDirectories: true)
+try glyphLayer().write(to: assets.appendingPathComponent("glyph.png"))
+try iconJSON.write(to: output.appendingPathComponent("icon.json"), atomically: true, encoding: .utf8)
+print("Wrote \(output.path)")

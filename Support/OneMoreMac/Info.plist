@@ -8,6 +8,8 @@
 	<string>OneMoreMac</string>
 	<key>CFBundleIconFile</key>
 	<string>AppIcon</string>
+	<key>CFBundleIconName</key>
+	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
 	<string>local.onemore-mac.app</string>
 	<key>CFBundleName</key>
