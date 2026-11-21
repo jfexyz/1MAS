@@ -50,6 +50,11 @@ itself triggers one.
 back the same way. No unsolicited `6A` was seen after either write, so the app reads the preset back
 rather than waiting for a push.
 
+The vendor's iPhone app lists twelve presets for the SonoFlow: Studio, Bass reducer, Bass booster,
+Acoustic, Classical, Podcast, Deep, Electronic, Hip-Hop, Lounge, Pop, and Vocal booster. That is
+PairFree's list for this model, in ID order, with `0B` named Vocal booster rather than Loud. The
+order is assumed to match the IDs; only `00` and `0A` were checked against a read.
+
 **Custom EQ read** (2026-11-21). `54`, sent as the vendor app does with the ten band frequencies as
 its payload (two bytes each, high first:
 `00 64 00 E5 02 AA 04 D0 0A 0A 0C 23 12 21 1A 5D 25 4E 38 A4`), replied with ten 7-byte records: a

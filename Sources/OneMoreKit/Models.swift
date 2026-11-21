@@ -44,12 +44,14 @@ public extension ListenMode {
     }
 }
 
-/// EQ preset names by ID, as the vendor app lists them (PairFree's decompilation).
+/// EQ preset names by ID, as the vendor app lists them for the SonoFlow (2026-11-21), in title
+/// case. 0x0B is "Loud" in PairFree's decompilation and "Voice Enhancement" in another vendor app;
+/// if another model's app names it differently, this becomes per model.
 public enum EQPreset {
     public static let names: [UInt8: String] = [
         0x00: "Studio", 0x01: "Bass Reducer", 0x02: "Bass Booster", 0x03: "Acoustic",
         0x04: "Classical", 0x05: "Podcast", 0x06: "Deep", 0x07: "Electronic", 0x08: "Hip-Hop",
-        0x09: "Lounge", 0x0A: "Pop", 0x0B: "Loud", 0x0C: "Custom", 0x0D: "THX",
+        0x09: "Lounge", 0x0A: "Pop", 0x0B: "Vocal Booster", 0x0C: "Custom", 0x0D: "THX",
     ]
 
     public static func name(_ id: UInt8) -> String {
