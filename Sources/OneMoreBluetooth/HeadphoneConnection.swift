@@ -24,7 +24,32 @@ public final class HeadphoneConnection {
         case connecting(name: String)
         case connected(name: String)
         /// Connected over Bluetooth, but the control channel could not be opened.
-        case failed(name: String, reason: String)
+        case failed(name: String, failure: ConnectFailure)
+    }
+
+    /// Why the control channel could not be opened, from the last of the connection attempts.
+    public enum ConnectFailure: Equatable, Sendable {
+        /// Opening the channel never completed: usually another client holds it.
+        case timedOut
+        case bluetoothError(IOReturn)
+        /// The channel opened, but the first read got no answer.
+        case noReply
+        /// The channel closed during the first read.
+        case connectionDropped
+        /// The device lists no Serial Port service.
+        case noControlService
+        case other(String)
+
+        init(_ error: any Error) {
+            switch error {
+            case BluetoothError.openTimedOut: self = .timedOut
+            case BluetoothError.openFailed(let code), BluetoothError.writeFailed(let code): self = .bluetoothError(code)
+            case BluetoothError.noSerialService: self = .noControlService
+            case BluetoothError.notOpen, SessionError.closed: self = .connectionDropped
+            case SessionError.timeout: self = .noReply
+            default: self = .other("\(error)")
+            }
+        }
     }
 
     public private(set) var status: Status = .noDevice
@@ -87,7 +112,7 @@ public final class HeadphoneConnection {
         status = .connecting(name: name)
         try? await Task.sleep(for: delay)
 
-        var reason = ""
+        var failure = ConnectFailure.other("")
         for attempt in 1...3 {
             do {
                 if DeviceDirectory.serialPortChannel(device) == nil {
@@ -108,12 +133,12 @@ public final class HeadphoneConnection {
                 adopt(session, device: device, name: name)
                 return
             } catch {
-                reason = "\(error)"
+                failure = ConnectFailure(error)
                 guard device.isConnected() else { break }
                 try? await Task.sleep(for: .seconds(2 * attempt))
             }
         }
-        status = device.isConnected() ? .failed(name: name, reason: reason) : .disconnected(name: name)
+        status = device.isConnected() ? .failed(name: name, failure: failure) : .disconnected(name: name)
     }
 
     private func adopt(_ session: Session, device: IOBluetoothDevice, name: String) {

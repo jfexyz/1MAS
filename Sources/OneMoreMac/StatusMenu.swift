@@ -138,9 +138,23 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         case .noDevice, .connected: []
         case .disconnected: ["Not connected"]
         case .connecting: ["Connecting…"]
-        // The usual cause is another client holding the control channel, which allows only one:
-        // the vendor's phone app or the `onemore` CLI. The technical reason is not shown.
-        case .failed: ["Unable to connect", "Another app might have control"]
+        case .failed(_, let failure): ["Unable to connect"] + Self.explanation(of: failure)
+        }
+    }
+
+    /// The control channel allows only one client, so another one holding it (the vendor's phone
+    /// app, or the `onemore` CLI) is the usual cause of a failure. The hint about that is shown
+    /// for the failures it can explain, with the specific cause below it except for a timeout,
+    /// which is how an occupied channel shows up.
+    private static func explanation(of failure: HeadphoneConnection.ConnectFailure) -> [String] {
+        let hint = "Another app might have control"
+        return switch failure {
+        case .timedOut: [hint]
+        case .bluetoothError(let code): [hint, "Bluetooth error \(ioReturnName(code))"]
+        case .noReply: [hint, "No reply from the headphones"]
+        case .connectionDropped: ["Connection dropped"]
+        case .noControlService: ["Control service not found"]
+        case .other(let description): [description]
         }
     }
 
