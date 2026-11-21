@@ -203,9 +203,10 @@ final class StatusMenu: NSObject, NSMenuDelegate {
     @objc private func toggleDualDevice() {
         guard let on = connection.session?.state.dualDevice else { return }
         let alert = NSAlert()
-        alert.messageText = on ? "Disable Dual Device Connection" : "Enable Dual Device Connection"
+        alert.messageText = on ? "Disable Dual Device Connection?" : "Enable Dual Device Connection?"
         alert.informativeText = "Changing this setting restarts the headphones. Audio will stop playing until they reconnect."
-        alert.addButton(withTitle: "Restart")
+        // Named for the change, not "Restart", which could read as restarting the Mac.
+        alert.addButton(withTitle: on ? "Disable" : "Enable")
         alert.addButton(withTitle: "Cancel")
         // A menu bar app is not frontmost, and the alert would open behind other windows.
         NSApp.activate()
