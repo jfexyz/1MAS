@@ -81,8 +81,9 @@ macOS may ask for Bluetooth permission again after an update, since each build i
 
 The menu bar icon is the headphones with a letter for the current mode: **A** for active noise
 cancellation, **T** for transparency, **O** for off. It is dimmed when no headphones are connected.
-The menu shows the battery, switches noise control and the EQ preset, turns dual device connection
-on or off, and shows the model and firmware.
+With Color Icon on Low Battery turned on in the menu, it turns orange at 20% battery or below. The
+menu shows the battery, switches noise control and the EQ preset, turns dual device connection on or
+off, and shows the model and firmware.
 
 **Only one program can hold the headphones' control channel.** While the app is connected, the
 vendor's phone app and the `unomas` CLI cannot reach the headphones; quit the app to use them. If

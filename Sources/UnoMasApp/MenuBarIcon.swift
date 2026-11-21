@@ -4,8 +4,15 @@ import UnoMasKit
 /// The menu bar icon: Apple's `headphones` SF Symbol, with a small letter in the open space under
 /// the headband for the listen mode: "A" for active noise cancellation, "T" for transparency, "O" for
 /// off, matching the first letters of the menu items. Dimmed, with no letter, while no headphones
-/// are connected (or before the mode is first read).
+/// are connected (or before the mode is first read). Optionally drawn in 1MORE's orange while the
+/// battery is low.
 enum MenuBarIcon {
+    /// The darker end of the app icon's gradient, 1MORE's button colour on usa.1more.com.
+    static let lowBatteryColor = NSColor(srgbRed: 1, green: 61 / 255, blue: 31 / 255, alpha: 1)
+
+    /// At or below this percentage the battery counts as low.
+    static let lowBatteryThreshold = 20
+
     static func letter(for mode: ListenMode?) -> String? {
         switch mode {
         case .strongANC, .mildANC, .adaptiveANC, .windReduction: "A"
@@ -15,7 +22,7 @@ enum MenuBarIcon {
         }
     }
 
-    static func image(mode: ListenMode?, connected: Bool) -> NSImage {
+    static func image(mode: ListenMode?, connected: Bool, lowBattery: Bool = false) -> NSImage {
         let size: CGFloat = 18
         let alpha: CGFloat = connected ? 1 : 0.35
         let letter = connected ? letter(for: mode) : nil
@@ -43,9 +50,21 @@ enum MenuBarIcon {
             }
             return true
         }
-        // Template: macOS colours it for the menu bar's appearance, using only its alpha.
-        image.isTemplate = true
-        image.accessibilityDescription = mode.map { "Headphones: \($0.label)" } ?? "Headphones"
-        return image
+        let description = mode.map { "Headphones: \($0.label)" } ?? "Headphones"
+        guard lowBattery else {
+            // Template: macOS colours it for the menu bar's appearance, using only its alpha.
+            image.isTemplate = true
+            image.accessibilityDescription = description
+            return image
+        }
+        // Not a template, so macOS keeps the colour: the same shape, filled with orange.
+        let tinted = NSImage(size: image.size, flipped: false) { rect in
+            image.draw(in: rect)
+            lowBatteryColor.set()
+            rect.fill(using: .sourceAtop)
+            return true
+        }
+        tinted.accessibilityDescription = "\(description), low battery"
+        return tinted
     }
 }

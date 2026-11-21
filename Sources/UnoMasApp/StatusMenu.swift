@@ -40,10 +40,22 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         rebuildMenu()
     }
 
+    /// The "Color Icon on Low Battery" option, off unless turned on.
+    private static let colorIconOnLowBatteryKey = "colorIconOnLowBattery"
+    private var colorIconOnLowBattery: Bool {
+        get { UserDefaults.standard.bool(forKey: Self.colorIconOnLowBatteryKey) }
+        set { UserDefaults.standard.set(newValue, forKey: Self.colorIconOnLowBatteryKey) }
+    }
+
     private func updateIcon() {
+        let session = connection.session
+        // 0 means the headphones did not report a level, which is not the same as low.
+        let battery = session.flatMap { session in session.state.info.map { $0.battery(for: session.model) } }
+        let low = battery.map { (1...MenuBarIcon.lowBatteryThreshold).contains($0) } ?? false
         statusItem.button?.image = MenuBarIcon.image(
-            mode: connection.session?.state.listenMode,
-            connected: connection.session != nil
+            mode: session?.state.listenMode,
+            connected: session != nil,
+            lowBattery: colorIconOnLowBattery && low
         )
     }
 
@@ -125,6 +137,10 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         login.target = self
         login.state = SMAppService.mainApp.status == .enabled ? .on : .off
         menu.addItem(login)
+        let color = NSMenuItem(title: "Color Icon on Low Battery", action: #selector(toggleColorIconOnLowBattery), keyEquivalent: "")
+        color.target = self
+        color.state = colorIconOnLowBattery ? .on : .off
+        menu.addItem(color)
         // No ⌘Q: a key equivalent gives the whole menu a column on the right, which the
         // right-aligned values cannot reach into.
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: ""))
@@ -225,6 +241,13 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         } catch {
             loginItemError = error.localizedDescription
         }
+        rebuildMenu()
+    }
+
+    @objc private func toggleColorIconOnLowBattery() {
+        colorIconOnLowBattery.toggle()
+        // A preference, not observable state, so redraw by hand.
+        updateIcon()
         rebuildMenu()
     }
 }
