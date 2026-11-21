@@ -140,6 +140,13 @@ music" commands (`49`, `4F`, `71`–`73`) whatever the caller asks. Note that IO
 - **Custom EQ.** The 10-band curve (`54` read, `53` write; ±3 dB per band) reads correctly on the
   SonoFlow, but writing it, and the menu's Custom preset, need an editor window first.
 - **More models**, added to `ModelInfo.known` as each is verified.
+- **Low-battery notification**, say at 20% and 10%. The battery is already read every five minutes.
+- **A global shortcut to cycle noise control.** Carbon's `RegisterEventHotKey` needs no
+  Accessibility permission.
+- **Release Control.** A menu item that lets go of the control channel for a while, so the vendor's
+  phone app can connect without quitting this one.
+- **About and version** in the menu, for bug reports.
+- **Continuous integration.** Build and run the tests on every push.
 
 ## License
 
