@@ -115,6 +115,9 @@ whether it works, or what does not, is very welcome.
 - ○ The model has it, and 1MAS offers it, untested. Custom EQ is not offered yet on any model.
 - — The model does not have it.
 
+Find yours by the name your Mac shows in System Settings → Bluetooth, which is the Model column
+without the "1MORE" in front. It can differ from the name on the box.
+
 Noise control lists the modes besides off. EQ presets gives the number of presets. The S22Ultra and
 S52 are controlled through Tuya's platform rather than this protocol, so 1MAS cannot reach them.
 
